@@ -7,7 +7,7 @@ I bought one of these neat looking RGB WW ring lamp things off [Ali Express](htt
 ![image](https://user-images.githubusercontent.com/6552931/198835721-98a37067-6197-4116-9572-551e1f78e7a5.png)
 
 
-I has a Bluetooth LE controller and I want to be able to control myself from code, not from within the app.
+I has a Bluetooth LE controller and I want to be able to control it myself from code, not from within the app.
 
 I'm going to try and reverse engineer the BLE protocol and see if I can make it work.
 
