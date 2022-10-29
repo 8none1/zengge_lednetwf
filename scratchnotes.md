@@ -179,8 +179,232 @@ Skipping all the preamble, let's look at the values of the write messages first.
 I ignore the first two packets, I expect they are some handshaking.  Everything breaks up reasonably neatly as I have done with the spaces.
  - First two bytes are a counter
  - The next eight bytes seem to stay the same
- - The next three bytes differ at the top (and the last packet which is an off I think) and the middle section which is where I was changing the colours.  6 bytes for colours would be RGB, but the numbers don;t make sense)
+ - The next three bytes differ at the top (and the last packet which is an off I think) and the middle section which is where I was changing the colours.  6 bytes for colours would be RGB, but the numbers don't make sense)
  - The last byte really looks like a checksum.  It's always the same for each of the commands, so isn't effected by the counter.
 
-I need to do some more colour changing to see if I can work out what's going on.
+## More colour changing
+
+
+Trace with times
+On 18:57
+
+Full color 18:57
+Press on
+Press red 18:58
+5 times
+Dragged to red
+slid around colours
+fiddle with saturation
+brightness
+down, all down, up
+off
+
+```
+	18:58:04   	0005 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:58:06   	0006 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:58:08   	0007 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:58:24   	0008 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:58:24   	0009 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:58:25   	000a 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:58:25   	000b 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:58:46   	000c 8000000d0e0b3ba1 40e464 0000000000000064	
+	18:58:46   	000d 8000000d0e0b3ba1 40e464 0000000000000064	
+	18:58:58   	000e 8000000d0e0b3ba1 43e464 0000000000000067	
+	18:58:58   	000f 8000000d0e0b3ba1 43e464 0000000000000067	
+	18:59:01   	0010 8000000d0e0b3ba1 52e464 0000000000000076	
+	18:59:01   	0011 8000000d0e0b3ba1 52e464 0000000000000076	
+	18:59:03   	0012 8000000d0e0b3ba1 5fe464 0000000000000083	
+	18:59:04   	0013 8000000d0e0b3ba1 5fe464 0000000000000083	
+	18:59:05   	0014 8000000d0e0b3ba1 6be464 000000000000008f	
+	18:59:05   	0015 8000000d0e0b3ba1 6be464 000000000000008f	
+	18:59:06   	0016 8000000d0e0b3ba1 706464 0000000000000014	
+	18:59:06   	0017 8000000d0e0b3ba1 706464 0000000000000014	
+	18:59:08   	0018 8000000d0e0b3ba1 766464 000000000000001a	
+	18:59:08   	0019 8000000d0e0b3ba1 766464 000000000000001a	
+	18:59:10   	001a 8000000d0e0b3ba1 7ee464 00000000000000a2	
+	18:59:10   	001b 8000000d0e0b3ba1 7ee464 00000000000000a2	
+	18:59:11   	001c 8000000d0e0b3ba1 856464 0000000000000029	
+	18:59:11   	001d 8000000d0e0b3ba1 856464 0000000000000029	
+	18:59:14   	001e 8000000d0e0b3ba1 8b6464 000000000000002f	
+	18:59:14   	001f 8000000d0e0b3ba1 8b6464 000000000000002f	
+	18:59:14   	0020 8000000d0e0b3ba1 91e464 00000000000000b5	
+	18:59:14   	0021 8000000d0e0b3ba1 91e464 00000000000000b5	
+	18:59:15   	0022 8000000d0e0b3ba1 9ae464 00000000000000be	
+	18:59:15   	0023 8000000d0e0b3ba1 9ae464 00000000000000be	
+	18:59:15   	0024 8000000d0e0b3ba1 9fe464 00000000000000c3	
+	18:59:16   	0025 8000000d0e0b3ba1 9fe464 00000000000000c3	
+	18:59:16   	0026 8000000d0e0b3ba1 aae464 00000000000000ce	
+	18:59:16   	0027 8000000d0e0b3ba1 aae464 00000000000000ce	
+	18:59:17   	0028 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:59:17   	0029 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:59:17   	002a 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:59:18   	002b 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:59:19   	002c 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:59:19   	002d 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:59:25   	002e 8000000d0e0b3ba1 005264 0000000000000092	
+	18:59:25   	002f 8000000d0e0b3ba1 005264 0000000000000092	
+	18:59:26   	0030 8000000d0e0b3ba1 003c64 000000000000007c	
+	18:59:26   	0031 8000000d0e0b3ba1 003c64 000000000000007c	
+	18:59:27   	0032 8000000d0e0b3ba1 002364 0000000000000063	
+	18:59:27   	0033 8000000d0e0b3ba1 002364 0000000000000063	
+	18:59:30   	0034 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:59:30   	0035 8000000d0e0b3ba1 006464 00000000000000a4	
+	18:59:49   	0036 8000000d0e0b3ba1 006406 0000000000000046	
+	18:59:49   	0037 8000000d0e0b3ba1 006406 0000000000000046	
+	18:59:53   	0038 8000000d0e0b3ba1 006400 0000000000000040	
+	18:59:53   	0039 8000000d0e0b3ba1 006400 0000000000000040	
+	18:59:56   	003a 8000000d0e0b3ba1 006464 00000000000000a4
+	18:59:56   	003b 8000000d0e0b3ba1 006464 00000000000000a4
+
+```
+
+Those colours just don't look right at all.
+
+If you go here:  https://jsbin.com/bezomev/edit?html,css,js,output
+and paste that col. in you see things like: https://imgur.com/a/mZloElF
+
+Get another trace of just pressing the red, green, blue buttons.
+Strip out all the common parts, and we're left with...
+
+```
+ 00 64 64
+ 00 64 64
+ 00 64 64
+ 00 64 64
+ 3c 64 64
+ 3c 64 64
+ 3c 64 64
+ 3c 64 64
+ 78 64 64
+ 78 64 64
+ 78 64 64
+ 78 64 64
+ 78 64 64
+```
+
+... I don't think this is RGB at all.
+
+What about HSL?
+
+0 = red
+120 = green
+240 = blue
+
+Let's convert the numbers in to decimal.  I might not need all the columns, but try it anyway...
+
+```
+0   100 100
+0   100 100
+0   100 100
+60  100 100
+60  100 100
+60  100 100
+120 100 100
+120 100 100
+120 100 100 
+```
+
+Welp, what if we multiplied the first column by 2?
+
+```
+0
+0
+0
+120
+120
+120
+240
+240
+240
+```
+
+That looks familiar, but, like, really though?
+Maybe first byte here is hue then?
+
+Now we need to try it out with some brightness changes.
+
+red
+red
+red
+blue
+blue
+blue
+green
+50% sat
+0% sat
+50% sat
+100% sat
+75% sat
+100% sat
+50% bright
+0% bright
+25% bright
+50% bright
+75% bright
+100% bright
+red
+
+file: hsl_test.log
+
+```
+0004 8000000d 0e0b3ba1   00 64 64   00 000000000000a4
+0005 8000000d 0e0b3ba1   78 64 64   00 0000000000001c
+0006 8000000d 0e0b3ba1   78 64 64   00 0000000000001c
+0007 8000000d 0e0b3ba1   3c 64 64   00 000000000000e0
+0008 8000000d 0e0b3ba1   3c 31 64   00 000000000000ad
+0009 8000000d 0e0b3ba1   3c 31 64   00 000000000000ad
+000a 8000000d 0e0b3ba1   00 00 64   00 00000000000040
+000b 8000000d 0e0b3ba1   00 00 64   00 00000000000040
+000c 8000000d 0e0b3ba1   3c 35 64   00 000000000000b1
+000d 8000000d 0e0b3ba1   3c 35 64   00 000000000000b1
+000e 8000000d 0e0b3ba1   3c 64 64   00 000000000000e0
+000f 8000000d 0e0b3ba1   3c 64 64   00 000000000000e0
+0010 8000000d 0e0b3ba1   3c 4c 64   00 000000000000c8
+0011 8000000d 0e0b3ba1   3c 4c 64   00 000000000000c8
+0012 8000000d 0e0b3ba1   3c 64 64   00 000000000000e0
+0013 8000000d 0e0b3ba1   3c 64 64   00 000000000000e0
+0014 8000000d 0e0b3ba1   3c 64 32   00 000000000000ae
+0015 8000000d 0e0b3ba1   3c 64 32   00 000000000000ae
+0016 8000000d 0e0b3ba1   3c 64 00   00 0000000000007c
+0017 8000000d 0e0b3ba1   3c 64 00   00 0000000000007c
+0018 8000000d 0e0b3ba1   3c 64 1c   00 00000000000098
+0019 8000000d 0e0b3ba1   3c 64 1c   00 00000000000098
+001a 8000000d 0e0b3ba1   3c 64 34   00 000000000000b0
+001b 8000000d 0e0b3ba1   3c 64 34   00 000000000000b0
+001c 8000000d 0e0b3ba1   3c 64 4a   00 000000000000c6
+001d 8000000d 0e0b3ba1   3c 64 4a   00 000000000000c6
+001e 8000000d 0e0b3ba1   3c 64 64   00 000000000000e0
+001f 8000000d 0e0b3ba1   3c 64 64   00 000000000000e0
+0020 8000000d 0e0b3ba1   00 64 64   00 000000000000a4
+```
+
+Once more to really make sure.  File:
+
+Connect
+On green
+
+Set Bri 100% Sat 100%
+Set bri 50%  sat 100%
+Set bri 25%  sat 100%
+Set bri 0%   sat 100%
+Set bri 100% sat 100%
+Set red
+Set blue
+
+File: finalhsltest.log
+
+RGB: [0, 0, 0]
+RGB: [0, 255, 0]
+RGB: [0, 132, 0]
+RGB: [0, 61, 0]
+RGB: [0, 0, 0]
+RGB: [0, 255, 0]
+RGB: [255, 0, 0]
+RGB: [0, 0, 255]
+
+Success! 
+
+It's taken pretty much all day, but I think I have the colour settings understood.  I still can't send messages yet, but that can come next.
+It's HSV, where the first byte is H/2 (so it will fit in one byte).
+
 

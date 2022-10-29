@@ -44,3 +44,13 @@ I will keep on in this manner until I understand more.
 
 Have a look at the scratch notes file to see where I've got to.
 
+# Current status
+## Counter
+The first two bytes of the written value are a counter of some kind.  It increments by 1 each time a command is sent and seems to reset each time the app opens.  So a per session counter?
+
+## Colour handling
+The colour handling is set in bytes 11,12,13.  It is encoded in HSV format, and the first byte, `hue`, is actually hue/2 to fit in one byte.
+
+
+
+
