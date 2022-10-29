@@ -42,3 +42,5 @@ repeated 5 times.  So I assume that these mean "on" and "off".
 
 I will keep on in this manner until I understand more.
 
+Have a look at the scratch notes file to see where I've got to.
+
