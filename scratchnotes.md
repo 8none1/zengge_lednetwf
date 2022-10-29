@@ -123,7 +123,7 @@ and we receive:
 `3e 00 04 00 1b 14 00 04 45 80 00 00 33 34 0c  7b22636f6465223a302c227061796c6f6164223a2238313144323332353045303033323332464630303032303033303839227d`
 `>E34                                         {"code":0,"payload":"811D23250E003232FF0002003089"}`
 
-If I look at just on the on/off messages I sent they look like this:
+If I look at just on the on/off messages I sent they look like this (including packet headers `02 02 00 1c 00 18` etc):
 
 ```
 02 02 00 1c 00 18 00 04 00 12 17 00 00 04 80 00 00 0d 0e 0b 3b 24 00 00 00 00 00 00 00 32 00 00 91
@@ -138,3 +138,49 @@ If I look at just on the on/off messages I sent they look like this:
 02 02 00 1c 00 18 00 04 00 12 17 00 00 0d 80 00 00 0d 0e 0b 3b 23 00 00 00 00 00 00 00 32 00 00 90
 02 02 00 1c 00 18 00 04 00 12 17 00 00 0e 80 00 00 0d 0e 0b 3b 24 00 00 00 00 00 00 00 32 00 00 91
 ```
+
+### Changing some colours.  RGB Only
+
+Skipping all the preamble, let's look at the values of the write messages first.  In a big list to see if we can spot the patterns.  Starting from opening the app.
+
+```
+0028000000c0d0b1014160a1d12032806000fb3
+0038000000c0d0b1014160a1d12032806000fb3
+
+0004 8000000d0e0b3b23 000000 00000000 32 00 00 90
+0005 8000000d0e0b3b24 000000 00000000 32 00 00 91
+0006 8000000d0e0b3b23 000000 00000000 32 00 00 90
+0007 8000000d0e0b3b24 000000 00000000 32 00 00 91
+0008 8000000d0e0b3b23 000000 00000000 32 00 00 90
+0009 8000000d0e0b3b24 000000 00000000 32 00 00 91
+000a 8000000d0e0b3b23 000000 00000000 32 00 00 90
+000b 8000000d0e0b3b24 000000 00000000 32 00 00 91
+000c 8000000d0e0b3b23 000000 00000000 32 00 00 90
+000d 8000000d0e0b3b24 000000 00000000 32 00 00 91
+000e 8000000d0e0b3b23 000000 00000000 32 00 00 90
+
+000f 8000000d0e0b3ba1 3c6464 00000000 00 00 00 e0
+0010 8000000d0e0b3ba1 3c6464 00000000 00 00 00 e0
+0011 8000000d0e0b3ba1 3c6464 00000000 00 00 00 e0
+0012 8000000d0e0b3ba1 3c6464 00000000 00 00 00 e0
+0013 8000000d0e0b3ba1 3c6464 00000000 00 00 00 e0
+0014 8000000d0e0b3ba1 786464 00000000 00 00 00 1c
+0015 8000000d0e0b3ba1 786464 00000000 00 00 00 1c
+0016 8000000d0e0b3ba1 786464 00000000 00 00 00 1c
+0017 8000000d0e0b3ba1 786464 00000000 00 00 00 1c
+0018 8000000d0e0b3ba1 786464 00000000 00 00 00 1c
+0019 8000000d0e0b3ba1 006464 00000000 00 00 00 a4
+001a 8000000d0e0b3ba1 006464 00000000 00 00 00 a4
+001b 8000000d0e0b3ba1 006464 00000000 00 00 00 a4
+
+001c 8000000d0e0b3b24 000000 00000000 32 00 00 91
+```
+
+I ignore the first two packets, I expect they are some handshaking.  Everything breaks up reasonably neatly as I have done with the spaces.
+ - First two bytes are a counter
+ - The next eight bytes seem to stay the same
+ - The next three bytes differ at the top (and the last packet which is an off I think) and the middle section which is where I was changing the colours.  6 bytes for colours would be RGB, but the numbers don;t make sense)
+ - The last byte really looks like a checksum.  It's always the same for each of the commands, so isn't effected by the counter.
+
+I need to do some more colour changing to see if I can work out what's going on.
+
