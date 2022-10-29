@@ -42,7 +42,7 @@ repeated 5 times.  So I assume that these mean "on" and "off".
 
 I will keep on in this manner until I understand more.
 
-Have a look at the scratch notes file to see where I've got to.
+Have a look at the [scratch notes file](https://github.com/8none1/zengge_lednetwf/blob/main/scratchnotes.md) to see where I've got to.
 
 # Current status
 ## Counter
