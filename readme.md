@@ -7,7 +7,7 @@ I bought one of these neat looking RGB WW ring lamp things off [Ali Express](htt
 ![image](https://user-images.githubusercontent.com/6552931/198835721-98a37067-6197-4116-9572-551e1f78e7a5.png)
 
 
-I has a Bluetooth LE controller and I want to be able to control it myself from code, not from within the app.
+I has a Bluetooth LE controller and I want to be able to control it myself from code, not from within the app.  It also has an mini remote control which seems to be RF not IR, despite looking like an IR.
 
 I'm going to try and reverse engineer the BLE protocol and see if I can make it work.
 
@@ -107,4 +107,3 @@ The last byte appears to be a checksum, but I haven't worked out how to calculat
  1. I still need to work out how to calculate the checksum, if it is indeed a checksum
  2. I need to work out the initial connection set up
  3. Try and craft a simple `gatttool`line to switch the thing on and off
- 

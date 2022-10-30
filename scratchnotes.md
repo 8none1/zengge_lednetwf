@@ -694,3 +694,24 @@ create timer 15:00 turn on repeat sun, wed, sat turn on
 
 This is non-obvious.  Not important for now.
 
+
+# Initial conection
+
+Enable BT in app
+Scans
+Gets some basic info
+Click in
+Connects
+Turn off
+Back to main screen
+exit
+
+1. MTU negotiation 200 bytes.  Later tablet asked for 256, but light said 200.
+2. A load of service discovery stuff I don't really understand. Not sure where the setting the notification is happening
+3. First outgoing request to light is: handle: 0x0017 service UUID: 0xffff, UUID: 0xff01.  Value `0001 800000 04 05 0a 81 8a 8b 96` 
+4. Recvd handle value notification. Handle 0x0014. UUID 0xffff. UUID: 0xff02. Value `046d80000033340a7b22636f6465223a302c227061796c6f6164223a2238313144323336314630303046463030303030303032303033303433227d`
+5. Sent (0xffff 0xff01) `0002 800000 0c 0d 0b 10 14 16 0a 1e 0e 39 2f 07 00 0f ee`
+6. Sent (0xffff 0xff01) `0003 800000 0c 0d 0b 10 14 16 0a 1e 0e 39 2f 07 00 0f ee`
+7. Sent (0xffff 0xff01) `0004 800000 0d 0e 0b 3b 24 00 00 00 00 00 00 00 32 00 00 91` (I think this is an on or an off)
+8. Rxed (0xffff 0xff02) `046e80000033340c7b22636f6465223a302c227061796c6f6164223a2238313144323436314630303046463030303030303032303033303434227d`
+
