@@ -44,13 +44,67 @@ I will keep on in this manner until I understand more.
 
 Have a look at the [scratch notes file](https://github.com/8none1/zengge_lednetwf/blob/main/scratchnotes.md) to see where I've got to.
 
+# Example Packets (arbitary grouping of bytes for my benefit)
+- On       `0004 800000 0d0e0b3b 23 000000 0000 0000 32 0000 90`
+- RGB      `0007 800000 0d0e0b3b a1 3c6464 0000 0000 00 0000 e0`
+- White    `000c 800000 0d0e0b3b b1 000000 642e 0000 00 0000 7e`
+- Symphony `0012 800000 04 05 0b 38 01 64 64`
+- Smear    `020200a500a1000 400121700 0007 800000 96970b59 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 000000 000000 000000 0000ff 0000ff 0000ff 01333200 92`
+
 # Current status
-## Counter
-The first two bytes of the written value are a counter of some kind.  It increments by 1 each time a command is sent and seems to reset each time the app opens.  So a per session counter?
+## Counter - bytes 0x0 & 0x1
+The first two bytes of the written value are a counter of some kind.  It increments by 1 each time a command is sent and seems to reset each time the app opens.  So a per session counter?  Should be easy to implement and test.
+
+## Some kind of padding - bytes 0x02 to 0x04
+The next 3 bytes are (so far) common to all packets and are `0x80 0x00 0x00`.
+
+## Power on/off
+ - 2 byte counter
+ - Bytes 2 -> 8 : `0x80 0x00 0x00 0x0d 0x0e 0x0b 0x3b` 
+ - Power on: Byte 9 is set to `0x23` Power off is `0x24` 
+ - Bytes 10 - 16 are `0x00`
+ - Byte 17 is set to `0x32`
+ - Bytes 18 & 19 `0x00`
+ - Byte 20 is checksum(?)
 
 ## Colour handling
-The colour handling is set in bytes 11,12,13.  It is encoded in HSV format, and the first byte, `hue`, is actually hue/2 to fit in one byte.
+### RGB
+The colour handling is set in bytes 10,11,12.  It is encoded in HSV format, and the first byte, `hue`, is actually hue/2 to fit in one byte.
+Also byte 9 is set to 0xa1.
+### White
+The white LEDs are set in bytes 13 & 14.  Bytes 14 is a scale from 0 to 100 representing white colour temperature and byte 15 is brightness from 0 to 100%.
+Also byte 10 is set to 0xb1.
+
+## Symphony
+This is what the app calls effects.  There are a number (113 in the app) of effects.  They are be numbered serially from 0x01 to 0x71.  These packets do not have a checksum it seems, and they use a different format to the RGB and white colour setting commands.  Nevertheless they are fairly easy to understand. They take the form of:
+
+`cnt  header --fixed- e  s  b`
+`0009 800000 04050b38 71 64 64`
+
+We see the usual counter, then a fixed chunk which is different to the colour commands, but consistent in the effect commands - so some kind of fixed mode setting, then `e` is the effect number, `s` is the speed (1-100) and `b` is brightness (0-100).
+
+## Smear
+This allows you to draw your own patterns on the device.  The message has 48 RRGGBB entries, and my device has 48 LEDs (according to the app), so that's pretty straight forward.  There are also some modes.  As always there is a whole lot of other stuff to work out which seems to be just fixed values.
+
+- The packets are 170 bytes long
+- There is a 12 byte header of some sort.  Seems fixed.
+- Then there is the counter.  I'm reasonably sure this is a two byte counter
+- Then there is a three byte "80 00 00" which we've seen elsewhere
+- Then four bytes which stay the same
+- Then 48 bytes of RRGGBB. Pixel zero is where the wire enters the metal circle and then with the stand on the left they go clockwise 
+- Then there are 5 bytes:
+  - mode (1 stream one way, 2 stream the other, 3 strobe, 4 jump)
+  - Speed (1 - 100%)
+  - Brightness (1-100%)
+  - ?
+  - ?  checksum perhaps?
 
 
+## Checksum
+The last byte appears to be a checksum, but I haven't worked out how to calculate it yet.
 
-
+# To Do
+ 1. I still need to work out how to calculate the checksum, if it is indeed a checksum
+ 2. I need to work out the initial connection set up
+ 3. Try and craft a simple `gatttool`line to switch the thing on and off
+ 
