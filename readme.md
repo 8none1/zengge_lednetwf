@@ -60,11 +60,11 @@ Have a look at the [scratch notes file](https://github.com/8none1/zengge_lednetw
 - Symphony `0012 800000 04 05 0b 38 01 64 64`
 - Smear    `020200a500a1000 400121700 0007 800000 96970b59 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 000000 000000 000000 0000ff 0000ff 0000ff 01333200 92`
 
-# Current status
-## Counter - bytes 0x0 & 0x1
+# Current status of investigation
+## Counter - bytes 0 & 1
 The first two bytes of the written value are a counter of some kind.  It increments by 1 each time a command is sent and seems to reset each time the app opens.  So a per session counter?  Should be easy to implement and test.
 
-## Some kind of padding - bytes 0x02 to 0x04
+## Some kind of padding - bytes 2 to 4
 The next 3 bytes are (so far) common to all packets and are `0x80 0x00 0x00`.
 
 ## Power on/off
