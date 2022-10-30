@@ -776,3 +776,311 @@ Dunno.  This is boring and hard.
 
 Dunno.
 
+# Attempting to make sense of the decompiled app
+
+I loaded the app in to `apktool` and looked in at the files.  They don't make any sense to me.
+I found a couple of interesting things that look relevant in case someone smarter than me can make sense of them.
+
+The interesting stuff lives in <decompiled app>/smali/com/zengge/hagallbjarkan/protocol/<foo>
+
+In `RemoteProtocol.smali` I found reference to "encyption" which is just xor.
+
+It seems to pass something in to `encrypt1` and then in to `encrypt2` and then maybe CRC?
+I've added my best guess comments below (I have no idea what I'm doing).  What's confusing me most, other than this strange code is that the packets aren't really encrypted since I can read perfectly logical values from the payload.  So what is being encrypted?  I assume nothing, and this is just a checksum. But then why so complicated?
+
+```
+.method public static encoder(BBI[B)[[B
+    .locals 7
+
+    const/16 v0, 0x9
+
+    const/4 v1, 0x0
+
+    if-nez p3, :cond_0
+
+    new-array p3, v0, [B
+
+    goto :goto_0
+
+    :cond_0
+    array-length v2, p3
+
+    if-ge v2, v0, :cond_1
+
+    new-array v2, v0, [B
+
+    array-length v3, p3
+
+    invoke-static {p3, v1, v2, v1, v3}, Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V
+
+    move-object p3, v2
+
+    goto :goto_0
+
+    :cond_1
+    array-length v2, p3
+
+    if-gt v2, v0, :cond_2
+
+    :goto_0
+    const/16 v2, 0x1a
+
+    new-array v3, v2, [B
+
+    const/16 v4, 0x5a
+
+    aput-byte v4, v3, v1
+
+    const/4 v4, 0x1
+
+    const/16 v5, 0x71
+
+    aput-byte v5, v3, v4
+
+    const/4 v4, 0x2
+
+    aput-byte v1, v3, v4
+
+    const/4 v4, 0x3
+
+    const/16 v5, 0x11
+
+    aput-byte v5, v3, v4
+
+    const/4 v4, 0x4
+
+    aput-byte v1, v3, v4
+
+    const/4 v5, 0x5
+
+    aput-byte p1, v3, v5
+
+    const/4 p1, 0x6
+
+    invoke-static {}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->nextSn()B
+
+    move-result v5
+
+    aput-byte v5, v3, p1
+
+    const/4 p1, 0x7
+
+    const/high16 v5, 0xff0000
+
+    and-int/2addr v5, p2
+
+    shr-int/lit8 v5, v5, 0x10
+
+    int-to-byte v5, v5
+
+    aput-byte v5, v3, p1
+
+    const p1, 0xff00
+
+    and-int v5, p2, p1
+
+    const/16 v6, 0x8
+
+    shr-int/2addr v5, v6
+
+    int-to-byte v5, v5
+
+    aput-byte v5, v3, v6
+
+    and-int/lit16 p2, p2, 0xff
+
+    int-to-byte p2, p2
+
+    aput-byte p2, v3, v0
+
+    const/16 p2, 0xa
+
+    aput-byte v1, v3, p2
+
+    const/16 v0, 0xb
+
+    aput-byte v1, v3, v0
+
+    const/16 v0, 0xc
+
+    aput-byte p0, v3, v0
+
+    const/16 p0, 0xd
+
+    array-length v0, p3
+
+    invoke-static {p3, v1, v3, p0, v0}, Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V
+
+    const/16 p0, 0x16
+
+    aput-byte v1, v3, p0
+
+    new-instance p3, Ljava/util/Random;
+
+    invoke-direct {p3}, Ljava/util/Random;-><init>()V
+
+    invoke-virtual {p3}, Ljava/util/Random;->nextInt()I
+
+    move-result p3
+
+    and-int/lit16 p3, p3, 0xff
+
+    int-to-byte p3, p3
+
+    const/16 v0, 0x17
+
+    aput-byte p3, v3, v0
+
+    aget-byte p3, v3, v0
+
+    invoke-static {v3, p3, p2, p0}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->encrypt1([BBII)V
+
+    invoke-static {v3, v4, v0}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->encrypt2([BII)V
+
+    invoke-static {v3}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->toCrc([B)I
+
+    move-result p0
+
+    const/16 p2, 0x18
+
+    and-int/2addr p1, p0
+
+    shr-int/2addr p1, v6
+
+    and-int/lit16 p1, p1, 0xff
+
+    int-to-byte p1, p1
+
+    aput-byte p1, v3, p2
+
+    const/16 p1, 0x19
+
+    and-int/lit16 p0, p0, 0xff
+
+    int-to-byte p0, p0
+
+    aput-byte p0, v3, p1
+
+    invoke-static {v3}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->reversal([B)V
+
+    sget-object p0, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->TAG:Ljava/lang/String;
+
+    new-instance p1, Ljava/lang/StringBuilder;
+
+    invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string p2, " HEX "
+
+    invoke-virtual {p1, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    invoke-static {v3, v2}, Lcom/zengge/hagallbjarkan/utils/ConvertUtil;->byte2HexStr([BI)Ljava/lang/String;
+
+    move-result-object p2
+
+    invoke-virtual {p1, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object p1
+
+    invoke-static {p0, p1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+
+    invoke-static {v3}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->toBytes([B)[[B
+
+    move-result-object p0
+
+    return-object p0
+
+    :cond_2
+    new-instance p0, Ljava/lang/RuntimeException;
+
+    const-string p1, "Overflow param."
+
+    invoke-direct {p0, p1}, Ljava/lang/RuntimeException;-><init>(Ljava/lang/String;)V
+
+    throw p0
+.end method
+
+.method private static encrypt1([BBII)V
+    .locals 1
+
+    :goto_0
+    if-gt p2, p3, :cond_0 // If we're past the end of the array(?) jump to cond_0 = return
+
+    aget-byte v0, p0, p2 // Load v0 with a byte
+
+    xor-int/2addr v0, p1 // xor the loaded value with whatever p1 is
+
+    int-to-byte v0, v0 // convert it to a byte
+
+    aput-byte v0, p0, p2 // put it back where it came from?
+
+    add-int/lit8 p2, p2, 0x1 // Increment the counter by 1
+
+    goto :goto_0 // Go around again
+
+    :cond_0
+    return-void
+.end method
+
+.method private static encrypt2([BII)V
+    .locals 4
+
+    move v0, p1
+
+    :goto_0
+    if-gt v0, p2, :cond_0
+
+    aget-byte v1, p0, v0
+
+    sget-object v2, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->args:[B
+
+    sub-int v3, v0, p1
+
+    aget-byte v2, v2, v3
+
+    xor-int/2addr v1, v2 
+
+    int-to-byte v1, v1
+
+    aput-byte v1, p0, v0
+
+    add-int/lit8 v0, v0, 0x1 // add one to the position and go around again
+
+    goto :goto_0
+
+    :cond_0
+    return-void
+.end method
+
+.method private static toCrc([B)I
+    .locals 3
+
+    const/4 v0, 0x0
+
+    move v1, v0
+
+    :goto_0
+    array-length v2, p0
+
+    add-int/lit8 v2, v2, -0x2
+
+    if-ge v0, v2, :cond_0
+
+    aget-byte v2, p0, v0
+
+    add-int/2addr v1, v2
+
+    add-int/lit8 v0, v0, 0x1
+
+    goto :goto_0
+
+    :cond_0
+    const p0, 0xffff
+
+    and-int/2addr p0, v1
+
+    return p0
+.end method
+
+```
