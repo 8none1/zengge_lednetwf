@@ -1,4 +1,9 @@
-# Zengge LEDnet WF reverse engineering attempt
+# Zengge LEDnet WF Bluetooth LE reverse engineering attempt
+
+Might also be known as:
+ - YBCRG-RGBWW 
+ - Magic Hue
+ - Bluetooth full colors selfie ring light
 
 
 ## Background
@@ -7,9 +12,10 @@ I bought one of these neat looking RGB WW ring lamp things off [Ali Express](htt
 ![image](https://user-images.githubusercontent.com/6552931/198835721-98a37067-6197-4116-9572-551e1f78e7a5.png)
 
 
-I has a Bluetooth LE controller and I want to be able to control it myself from code, not from within the app.  It also has an mini remote control which seems to be RF not IR, despite looking like an IR.
+It has a Bluetooth LE controller and I want to be able to control it myself from code, not from within the app.  It also has an mini remote control which seems to be RF not IR, despite looking like an IR.
+The app is called "Zengge" but also seems to be branded Magic Hue in a few places.
 
-I'm going to try and reverse engineer the BLE protocol and see if I can make it work.
+I'm going to try and reverse engineer the BLE protocol and see if I can make it work.  It is probably worth trying to decompile the Android app as well and see if any insights can be gained there.  The final idea I have is to simply replace the entire controller with something more friendly, like WLED.
 
 If you're interested in helping out, please get in touch.  If you know of someone who has already worked this out let me know.
 
