@@ -17,6 +17,9 @@ The app is called "Zengge" but also seems to be branded Magic Hue in a few place
 
 I'm going to try and reverse engineer the BLE protocol and see if I can make it work.  It is probably worth trying to decompile the Android app as well and see if any insights can be gained there.  The final idea I have is to simply replace the entire controller with something more friendly, like WLED.
 
+![image](https://user-images.githubusercontent.com/6552931/198889989-ac594279-b3c5-47e6-ad61-4ea750f723b1.png)
+
+
 If you're interested in helping out, please get in touch.  If you know of someone who has already worked this out let me know.
 
 ## Process
