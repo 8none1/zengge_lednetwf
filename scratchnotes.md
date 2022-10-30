@@ -1001,7 +1001,7 @@ I've added my best guess comments below (I have no idea what I'm doing).  What's
     throw p0
 .end method
 
-.method private static encrypt1([BBII)V
+.method private static encrypt1([BBII)V // I think this means we have a byte array and two ints. One of the ints might be the length of the array.
     .locals 1
 
     :goto_0
