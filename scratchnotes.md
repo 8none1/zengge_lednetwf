@@ -1326,7 +1326,7 @@ I'm not certain yet if it's useful, or even the right one.  But here's some thin
 
 # Friday 4 November 2022
 
-I have spent the last week reverse engineering what I think is the protocol from the disassembled Android app.  I went through the smali byte code line by line and ported it to Python.  It's included in this repo, but its nowhere need functional.  Or tested.
+I have spent the last week reverse engineering what I think is the protocol from the disassembled Android app.  I went through the smali byte code line by line and ported it to Python.  It's included in this repo, but its nowhere near functional.  Or tested.
 
 Do you know why it's not tested?  Well stay tuned...
 
