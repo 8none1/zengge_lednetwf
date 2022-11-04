@@ -60,7 +60,7 @@ Have a look at the [scratch notes file](https://github.com/8none1/zengge_lednetw
 - Symphony `0012 800000 04 05 0b 38 01 64 64`
 - Smear    `020200a500a1000 400121700 0007 800000 96970b59 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 000000 000000 000000 0000ff 0000ff 0000ff 01333200 92`
 
-# Current status of investigation
+# Secondary Investigation
 ## Counter - bytes 0 & 1
 The first two bytes of the written value are a counter of some kind.  It increments by 1 each time a command is sent and seems to reset each time the app opens.  So a per session counter?  Should be easy to implement and test.
 
@@ -112,7 +112,6 @@ This allows you to draw your own patterns on the device.  The message has 48 RRG
 ## Checksum
 The last byte appears to be a checksum, but I haven't worked out how to calculate it yet.
 
-# To Do
- 1. I still need to work out how to calculate the checksum, if it is indeed a checksum
- 2. I need to work out the initial connection set up
- 3. Try and craft a simple `gatttool`line to switch the thing on and off
+# Latest news
+It turns out that once you've connected to the device, set the MTU and enabled notifications then the packet counter and checksum ARE COMPLETELY IGNORED.  Yup.  
+You can read the whole horrific story in the scratch notes file.  A very rough, unfinished, and at this point abandoned attempt to reverse engineering the protocol exists in the file `encoder.py`.  It rather looks like we don't need any of that at the moment. Tomorrow I will craft some bash scripts to really shake down what we can do with this discovery.
