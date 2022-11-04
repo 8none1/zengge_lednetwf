@@ -771,316 +771,582 @@ Dunno.  This is boring and hard.
 0023 8000000d 0e0b3ba1 78646400 00000000 00001c
 0024 8000000d 0e0b3ba1 00006400 00000000 000040
 0025 8000000d 0e0b3ba1 1e646400 00000000 0000c2
-0026 8000000d 0e0b3ba1 00006400 00000000 000040
+
+0026 8000 000d 0e0b3ba1 00006400 00000000 000040
 ```
 
-Dunno.
+Dunno.  It doesn't get solved by any of the online CRC calculators.
 
-# Attempting to make sense of the decompiled app
+# Attempting to make sense of the decompiled app - apktool
 
 I loaded the app in to `apktool` and looked in at the files.  They don't make any sense to me.
 I found a couple of interesting things that look relevant in case someone smarter than me can make sense of them.
 
-The interesting stuff lives in <decompiled app>/smali/com/zengge/hagallbjarkan/protocol/<foo>
+The interesting stuff lives in <decompiled app>/smali/com/zengge/hagallbjarkan/<foo>
 
-In `RemoteProtocol.smali` I found reference to "encyption" which is just xor.
+Fun fact:  Hagall Bjarkan is the who Bluetooth is named after.
 
-It seems to pass something in to `encrypt1` and then in to `encrypt2` and then maybe CRC?
+Useful resources:
+ - https://github.com/JesusFreke/smali/wiki/Registers
+ 
+Files of interest:
+ - remoter/RemoterController.smali - defines `.method public static send(`
+ - protocol/remoter/RemoterProtocol.smali - Seems to construct the byte array which gets sent to the BLE device
+
+None of what follows should be considered truth.  It's just my guess work.
+
+In `RemoteProtocol.smali` I found reference to "encryption" which is just xor.
+
+It seems to pass something in to `encrypt1` and then in to `encrypt2` and then maybe `CRC`?
 I've added my best guess comments below (I have no idea what I'm doing).  What's confusing me most, other than this strange code is that the packets aren't really encrypted since I can read perfectly logical values from the payload.  So what is being encrypted?  I assume nothing, and this is just a checksum. But then why so complicated?
+
+If `encoder` is what builds the byte array, where is that called from?  It is called from `send` in `RemoterController.smali`.  `send` looks like this:
+
+```
+.method public static send(Landroid/content/Context;II[B)V // Called with a context?, two ints and a byte array
+    .locals 1
+    int-to-byte p2, p2 // int p2 is converted to a byte. I think this is the 2nd int passed in
+    const/16 v0, 0x1f // v0 is set to 0x1f v0 is the first local register
+	// encoder is called with p2, 0x1f, the first int, the byte array
+    invoke-static {p2, v0, p1, p3}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->encoder(BBI[B)[[B
+    move-result-object p1
+    invoke-static {p1}, Lcom/zengge/hagallbjarkan/utils/AdvertiseUtils;->createAdvertiseData03([[B)Landroid/bluetooth/le/AdvertiseData;
+    move-result-object p1
+    invoke-static {p0, p1}, Lcom/zengge/hagallbjarkan/utils/AdvertiseUtils;->advertiseData(Landroid/content/Context;Landroid/bluetooth/le/AdvertiseData;)V
+    return-void
+.end method
+```
+
+So `send` calls `RemoterProtocol->encoder` with a byte, a byte, and int and a byte array, it returns a byte array.  The returned array is then sent out via AdvertiseData in the Landroid stack.  I assume this is just sending it over the air, but I don't get why it's called "Advertise".  So perhaps this is wrong, or perhaps the send happens elsewhere.
+
+Anyway, the thing I think I need to know is what is getting passed in to `encoder`.  Reading this: https://github.com/JesusFreke/smali/wiki/Registers#how-method-parameters-are-passed-into-a-method
+
 
 ```
 .method public static encoder(BBI[B)[[B
     .locals 7
-
     const/16 v0, 0x9
-
     const/4 v1, 0x0
-
-    if-nez p3, :cond_0
-
+    if-nez p3, :cond_0    // if the byte array is not zero
     new-array p3, v0, [B
-
     goto :goto_0
-
-    :cond_0
-    array-length v2, p3
-
-    if-ge v2, v0, :cond_1
-
-    new-array v2, v0, [B
-
-    array-length v3, p3
-
+    :cond_0               // we have been passed an array with something in
+    array-length v2, p3   // v2 is now array len
+    if-ge v2, v0, :cond_1 // if len > 0x9 jump to cond_1
+    new-array v2, v0, [B  // not bigger than 9, so new byte array v2 0x9 long
+    array-length v3, p3   // v3 now len of passed in array
     invoke-static {p3, v1, v2, v1, v3}, Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V
-
-    move-object p3, v2
-
+	//       p3 = passed in array
+	//       v1 = 0x0
+	//       v2 = len of array
+	//       v1 = 0x0
+	//       v3 = 0x9
+	// this is obvs copying the passed array to a new bigger array
+    move-object p3, v2   // v2 len of array is now p3 len of array
     goto :goto_0
-
-    :cond_1
-    array-length v2, p3
-
-    if-gt v2, v0, :cond_2
-
-    :goto_0
-    const/16 v2, 0x1a
-
-    new-array v3, v2, [B
-
-    const/16 v4, 0x5a
-
-    aput-byte v4, v3, v1
-
-    const/4 v4, 0x1
-
-    const/16 v5, 0x71
-
-    aput-byte v5, v3, v4
-
+    :cond_1 // We were passed an array bigger than 0x9
+    array-length v2, p3    // v2 = len of array
+    if-gt v2, v0, :cond_2  // if array len > 0x9 goto cond_2
+    :goto_0 // v3 is array len, p3 is an array of size 0x9 bytes
+    const/16 v2, 0x1a 
+    new-array v3, v2, [B // v3 is new array of 0x1a long bytes
+    const/16 v4, 0x5a    // v4 is 0x5a
+    aput-byte v4, v3, v1 // put 0x5a in position 0x0 of array v3
+    const/4 v4, 0x1      // v1 = 0x1
+    const/16 v5, 0x71    // v5 = 0x71
+    aput-byte v5, v3, v4 // put 0x71 in position 0x1 of array v3
     const/4 v4, 0x2
-
-    aput-byte v1, v3, v4
-
+    aput-byte v1, v3, v4 // put 0x0 in position 0x2 of array v3
     const/4 v4, 0x3
-
     const/16 v5, 0x11
-
-    aput-byte v5, v3, v4
-
+    aput-byte v5, v3, v4 // put 0x11 in pos 0x3 
     const/4 v4, 0x4
-
-    aput-byte v1, v3, v4
-
+    aput-byte v1, v3, v4   // put 0x0 in pos 0x4 
     const/4 v5, 0x5
-
-    aput-byte p1, v3, v5
-
+    aput-byte p1, v3, v5      // put p1 (0x1f) I think in pos 0x5 (2nd param reg)
     const/4 p1, 0x6
-
-    invoke-static {}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->nextSn()B
-
+    invoke-static {}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->nextSn()B  // I think this might be the counter?
     move-result v5
-
-    aput-byte v5, v3, p1
-
-    const/4 p1, 0x7
-
-    const/high16 v5, 0xff0000
-
-    and-int/2addr v5, p2
-
-    shr-int/lit8 v5, v5, 0x10
-
+    aput-byte v5, v3, p1      // put v5 (from nextsn) in 0x6 let's assume this is the counter
+    const/4 p1, 0x7           // pos 7 in p1 now
+    const/high16 v5, 0xff0000 // 
+    and-int/2addr v5, p2      // add p2 to v5. p2 is 3rd param, an int. Called from RemoterController `send` method. 
+    shr-int/lit8 v5, v5, 0x10 // vx, vy, vz - Shift vy right by the positions specified by vz (0x10) and store the result into vx.  (could be encoding grb?)
     int-to-byte v5, v5
-
     aput-byte v5, v3, p1
-
     const p1, 0xff00
-
     and-int v5, p2, p1
-
     const/16 v6, 0x8
-
     shr-int/2addr v5, v6
-
     int-to-byte v5, v5
-
     aput-byte v5, v3, v6
-
     and-int/lit16 p2, p2, 0xff
-
     int-to-byte p2, p2
-
     aput-byte p2, v3, v0
-
     const/16 p2, 0xa
-
     aput-byte v1, v3, p2
-
     const/16 v0, 0xb
-
     aput-byte v1, v3, v0
-
     const/16 v0, 0xc
-
     aput-byte p0, v3, v0
-
     const/16 p0, 0xd
-
     array-length v0, p3
-
     invoke-static {p3, v1, v3, p0, v0}, Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V
-
     const/16 p0, 0x16
-
     aput-byte v1, v3, p0
-
-    new-instance p3, Ljava/util/Random;
-
+    new-instance p3, Ljava/util/Random; // I dont see any evidence of random number usage in the HCI logs?
     invoke-direct {p3}, Ljava/util/Random;-><init>()V
-
     invoke-virtual {p3}, Ljava/util/Random;->nextInt()I
-
-    move-result p3
-
-    and-int/lit16 p3, p3, 0xff
-
-    int-to-byte p3, p3
-
+    move-result p3 // p3 is now a random int
+    and-int/lit16 p3, p3, 0xff // adds 0xff to the random number and puts it in p3
+    int-to-byte p3, p3 // convert p3 to a byte
     const/16 v0, 0x17
-
-    aput-byte p3, v3, v0
-
-    aget-byte p3, v3, v0
-
+    aput-byte p3, v3, v0  // put value of p3 in to array v3 at location v0 (0x17)
+    aget-byte p3, v3, v0 // get from byte array v3 at location v0 (0x17) store in p3 (i.e. put it in then take it back out again?)
+    // call encrypt1 with the array (v3), our randomnumber + 0xff (p3), p2 is 0xa I think, p0 is 0x16
     invoke-static {v3, p3, p2, p0}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->encrypt1([BBII)V
-
     invoke-static {v3, v4, v0}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->encrypt2([BII)V
-
     invoke-static {v3}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->toCrc([B)I
-
     move-result p0
-
     const/16 p2, 0x18
-
     and-int/2addr p1, p0
-
     shr-int/2addr p1, v6
-
     and-int/lit16 p1, p1, 0xff
-
     int-to-byte p1, p1
-
     aput-byte p1, v3, p2
-
     const/16 p1, 0x19
-
     and-int/lit16 p0, p0, 0xff
-
     int-to-byte p0, p0
-
     aput-byte p0, v3, p1
-
     invoke-static {v3}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->reversal([B)V
-
     sget-object p0, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->TAG:Ljava/lang/String;
-
     new-instance p1, Ljava/lang/StringBuilder;
-
     invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
-
     const-string p2, " HEX "
-
     invoke-virtual {p1, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
     invoke-static {v3, v2}, Lcom/zengge/hagallbjarkan/utils/ConvertUtil;->byte2HexStr([BI)Ljava/lang/String;
-
     move-result-object p2
-
     invoke-virtual {p1, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
     invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
     move-result-object p1
-
     invoke-static {p0, p1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
-
     invoke-static {v3}, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->toBytes([B)[[B
-
     move-result-object p0
-
     return-object p0
-
     :cond_2
     new-instance p0, Ljava/lang/RuntimeException;
-
     const-string p1, "Overflow param."
-
     invoke-direct {p0, p1}, Ljava/lang/RuntimeException;-><init>(Ljava/lang/String;)V
-
     throw p0
 .end method
 
-.method private static encrypt1([BBII)V // I think this means we have a byte array and two ints. One of the ints might be the length of the array.
+.method private static encrypt1([BBII)V 
+// I think this means we have a byte array and two ints. One of the ints might be the length of the array. Returns VOID, so must edit the array in place?
+// called from above with encrypt1 with the array (v3), our randomnumber + 0xff (p3), p2 is 0xa I think, p0 is 0x16
+// p0 = byte array
+// p1 = random number + 0xff
+// p2 = 0xa (dec 10)
+// p3 = 0x16 (dec 22)
     .locals 1
-
     :goto_0
     if-gt p2, p3, :cond_0 // If we're past the end of the array(?) jump to cond_0 = return
-
-    aget-byte v0, p0, p2 // Load v0 with a byte
-
-    xor-int/2addr v0, p1 // xor the loaded value with whatever p1 is
-
+    aget-byte v0, p0, p2 // Load v0 with a byte from p2 in array p0.
+    xor-int/2addr v0, p1 // xor the loaded value with whatever p1 is (random + 0xff? but that wouldnt fit in a byte)
     int-to-byte v0, v0 // convert it to a byte
-
     aput-byte v0, p0, p2 // put it back where it came from?
-
     add-int/lit8 p2, p2, 0x1 // Increment the counter by 1
-
     goto :goto_0 // Go around again
-
     :cond_0
     return-void
 .end method
 
 .method private static encrypt2([BII)V
     .locals 4
-
     move v0, p1
-
     :goto_0
     if-gt v0, p2, :cond_0
-
     aget-byte v1, p0, v0
-
     sget-object v2, Lcom/zengge/hagallbjarkan/protocol/remoter/RemoterProtocol;->args:[B
-
     sub-int v3, v0, p1
-
     aget-byte v2, v2, v3
-
     xor-int/2addr v1, v2 
-
     int-to-byte v1, v1
-
     aput-byte v1, p0, v0
-
     add-int/lit8 v0, v0, 0x1 // add one to the position and go around again
-
     goto :goto_0
-
     :cond_0
     return-void
 .end method
 
 .method private static toCrc([B)I
     .locals 3
-
     const/4 v0, 0x0
-
     move v1, v0
-
     :goto_0
     array-length v2, p0
-
     add-int/lit8 v2, v2, -0x2
-
     if-ge v0, v2, :cond_0
-
     aget-byte v2, p0, v0
-
     add-int/2addr v1, v2
-
     add-int/lit8 v0, v0, 0x1
-
     goto :goto_0
-
     :cond_0
     const p0, 0xffff
-
     and-int/2addr p0, v1
-
     return p0
 .end method
 
 ```
+
+# Attemping to make sense of the decompiled app using jadx
+This is a bit more useable.  It converts back to something which looks more like code.
+I compared the bytes I thought the apktool would generate to the same thing here, and I was pretty close, so I think they are the same, but this one is a lot easier to read.  I'm going to try using this instead.
+
+Here's the same encoder from above, but decomplied by jadx:
+
+```
+public class RemoterProtocol {
+    private static final String TAG = "com.zengge.hagallbjarkan.protocol.remoter.RemoterProtocol";
+    private static final byte[] args = {17, 34, 4, 8, -103, 4, 36, 22, 4, -86, -69, -52, -16, 96, 97, -51, -49, Byte.MIN_VALUE, 53, 42};
+    private static byte count = 1;
+
+    public static byte[][] encoder(byte b2, byte b3, int i, byte[] bArr) {
+        if (bArr == null) {
+            bArr = new byte[9];
+        } else if (bArr.length < 9) {
+            byte[] bArr2 = new byte[9];
+            System.arraycopy(bArr, 0, bArr2, 0, bArr.length);
+            bArr = bArr2;
+        } else if (bArr.length > 9) {
+            throw new RuntimeException("Overflow param.");
+        }
+        System.arraycopy(bArr, 0, r3, 13, bArr.length);
+        encrypt1(r3, r3[23], 10, 22);
+        encrypt2(r3, 4, 23);
+        int crc = toCrc(r3);
+        byte[] bArr3 = {90, 113, 0, 17, 0, b3, nextSn(), (byte) ((16711680 & i) >> 16), (byte) ((i & CipherSuite.DRAFT_TLS_DHE_RSA_WITH_AES_128_OCB) >> 8), (byte) (i & 255), 0, 0, b2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (byte) (new Random().nextInt() & 255), (byte) (((65280 & crc) >> 8) & 255), (byte) (crc & 255)};
+        reversal(bArr3);
+        String str = TAG;
+        Log.i(str, " HEX " + ConvertUtil.byte2HexStr(bArr3, 26));
+        return toBytes(bArr3);
+    }
+
+    private static void encrypt1(byte[] bArr, byte b2, int i, int i2) {
+        while (i <= i2) {
+            bArr[i] = (byte) (bArr[i] ^ b2);
+            i++;
+        }
+    }
+
+    private static void encrypt2(byte[] bArr, int i, int i2) {
+        for (int i3 = i; i3 <= i2; i3++) {
+            bArr[i3] = (byte) (bArr[i3] ^ args[i3 - i]);
+        }
+    }
+
+    private static byte nextSn() {
+        byte b2;
+        synchronized (RemoterProtocol.class) {
+            b2 = count;
+            count = (byte) (b2 + 1);
+        }
+        return b2;
+    }
+
+    private static void reversal(byte[] bArr) {
+        int i = 2;
+        while (i < bArr.length - 1) {
+            byte b2 = bArr[i];
+            int i2 = i + 1;
+            bArr[i] = bArr[i2];
+            bArr[i2] = b2;
+            i = i2 + 1;
+        }
+    }
+
+    private static byte[][] toBytes(byte[] bArr) {
+        byte[][] bArr2 = (byte[][]) Array.newInstance(byte.class, bArr.length / 2, 2);
+        for (int i = 0; i < bArr2.length; i++) {
+            byte[] bArr3 = bArr2[i];
+            int i2 = i * 2;
+            bArr3[0] = bArr[i2];
+            bArr3[1] = bArr[i2 + 1];
+        }
+        return bArr2;
+    }
+
+    private static int toCrc(byte[] bArr) {
+        int i = 0;
+        for (int i2 = 0; i2 < bArr.length - 2; i2++) {
+            i += bArr[i2];
+        }
+        return 65535 & i;
+    }
+}
+```
+
+What surprises me is how much CRC and encryption stuff is seemingly performed.  For all that messing about, I was still able to manually decode the protocol for light colour.  There is something going on here that I don't understand, and it's probably to do with those 8 bytes at the start which seem to be static.
+
+ - You've got to pass in a max 9 element array to encoder.
+ - It then copies your whole 9 byte array in to an array called r3 starting at position 13(?? the array is only 9 long. Decompile error?)
+ 
+ I took another look at the Smali code since the Java wasn't making much sense.  It looks like the decompiler got confused.  There are references to encryption libraries in Java which in Smali look like simple bitshifts (but contain the letters "shr" so maybe misinterpreted as a encryption routine?)
+ ```
+  const/16 v2, 0x1a
+  new-array v3, v2, [B
+```
+ - This new array is then filled up with (* indicates see notes):
+
+ Example real message:
+  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f  10 11 12 13 14 
+ `00 10 80 00 00 0d 0e 0b 3b a1 3c 4c 64 00 00 00 00 00 00 00 c8`
+
+  1  2  3  4  5  6  7       8   9   10 11 12 13  14 15 16 17 18 19 20 21 22 23 24 25 26 27
+  0  1  2  3  4  5  6       7   8   9  A  B  c   d  e  f  10 11 12 13 14 15 16 17 18 19 1A
+ `5A 71 00 11 00 P1 NEXTSN *FF *FF *FF 00 00 Bp0 *  *  *  *  *  *  *  *  *  00 *  `
+
+ Note A - byte 8 (starting at 1)
+  - 0xFF0000 AND (byte) p2
+  - shift right 0x10  = 16 places
+  - regardless of the input p2, the answer will always be 0xFF?
+  - So what's the point?
+  - Could be a code bug, could be a decompile bug
+
+Note B - byte 9
+ - Decompiled java talks about an encryption routine, but the smali doesn't?
+ - 0xff00 && p2 - which is a byte, so max 0xff? =p5
+ - shift right by 0x8
+ - Output is 0xFF regardless?
+ - Add to array at 0x8
+ - Why?
+
+Note C - byte 10
+ - p2 AND 0xFF
+ - Add to array at v0 which is 0x9
+
+Note D - byte 14
+ - Create a new array v0 which is p3 long
+ - Call arraycopy (src, srcpos, dest, destpos, num bytes to copy).
+ - Which works out to be copy (p3, 0, our working array, 0xd, len(p3)
+ - So copy all the bytes from the array passed in at the start in to here starting at 0xD
+ - I assume this is the max 9 long array created earlier
+ - then set p0 0x16 which is 9 after 0xd
+
+Note E - byte 24
+ - Get a random int in to p3
+ - Set p3 to be int rand AND 0xff (so last two digits)
+ - Store our random number byte in position 0x17 (used for xor)
+ - Gets it back out again in to p3
+ - Calls "encrypt1" with main array, random & FF, 0xa, 0x16) (line 206)
+ - encypt 1: if 0xa > 0x16 (p2) return void (line 278)
+ - encrypt1(array, rand, start, stop)
+ - 0xa is a const at this point, as is 0x16. These might be array lengths?
+ - So in this case we carry on
+ - load v0 with value of array[p2 (0x16)]
+ - xor it with p1 (0xa)
+ - put it back
+ - add 1 to p2
+ - So `encrypt1` xors the array values from p2 0xa to p3 0x16 with a random number which is stored in the main array at 0x17 where it is anded with FF.
+ - On to `encrypt2`.  Called with (main array, v4 0x4, v0 0x17 (pos of rand but also len of array?))
+ - v0 is 0x4
+ - if v0 0x4 > p2 0x17 return.  So a loop over bytes 4 to 17?
+ - v1 = byte at array[counter v0]
+ - load v2 with the array which is created at the top of the file (20 bytes):
+ ```
+ 0x11   | 17 
+ 0x22   | 34
+  0x4   | 4
+  0x8   | 8
+-0x67   | -103
+0x4     | 4
+0x24    | 36
+0x16    | 22
+0x4     | 4
+-0x56   | -86
+-0x45   | -69
+-0x34   | -52
+-0x10   | -16
+0x60    | 96
+0x61    | 97
+-0x33   | -51
+-0x31   | -49
+-0x80   | -128
+0x35    | 53
+0x2a    | 42
+ ```
+ - What the hell is this? Is it an encryption key? Let's call it that
+ - set v3 to zero. 0x4 minus 0x4 (i.e. at the start this is zero)
+ - set v2 to the encryption key array
+ - set v2 to byte v3 of the encyption key array
+ - v0 is counter
+ - xor byte v1 with byte v2. v1 is `array_p0[v0]`.  v2 is `encryption_array[v0 - p1]`
+ - put the result in main array[v0]
+ - increment v0 by 1
+
+
+
+
+It runs it through "reversal" which starts at position "2" so 3rd byte and loops until one before the end.  That is it skips the first 2 elements and the last element.  It just swaps bytes around, it doesn't reverse the whole array.
+
+That would give us:
+
+`5A 71 11 00 1F 00 FF 00 FF FF 00 00 00 FF 00 00 00 00 00 00 00 00 00 FF FF FF FF`
+
+If we want to try and work backwards, 
+The "set the colour" messages are 21 bytes long.
+4 bytes of counter
+7 bytes of wtf
+1 byte of something related to what it's doing
+5 bytes of colour
+5 bytes of 0
+1 byte checksum
+
+
+
+
+0010 8000000d0e0b3b b1 000000 6464 0000000000 b4
+0006 8000000d0e0b3b a1 006464 0000 0000000000 a4
+
+
+
+
+
+
+# SDK
+I found an SDK!  http://cnwifidevsdk.magichue.net:4000/ble/
+
+I'm not certain yet if it's useful, or even the right one.  But here's some things which might be useful:
+
+```
+    public static ZGHBDevice newDevice(byte[] bArr, ScanResult scanResult) {
+        int i;
+        if (bArr == null || bArr.length < 32) {
+            return null;
+        }
+        try {
+            LinkedList linkedList = new LinkedList();
+            LinkedList linkedList2 = new LinkedList();
+            int i2 = 0;
+            do {
+                int i3 = bArr[i2] & 255;
+                if (i3 == 0) {
+                    break;
+                }
+                int i4 = i2;
+                int i5 = i2;
+                int i6 = bArr[i2 + 1] & 255;
+                int i7 = i3 - 1;
+                byte[] bArr2 = new byte[i7];
+                System.arraycopy(bArr, i5 + 2, bArr2, 0, i7);
+                linkedList.add(Integer.valueOf(i6));
+                linkedList2.add(bArr2);
+                i = i4 + i3 + 1;
+                i2 = i;
+            } while (i != bArr.length);
+            if (linkedList.size() != linkedList2.size()) {
+                return null;
+            }
+            if (linkedList.contains(22)) {
+                if (linkedList.contains(255)) {
+                    String str = TAG;
+                    Log.i(str, "correct packets");
+                    int index = getIndex(linkedList, 22);
+                    int index2 = getIndex(linkedList, 255);
+                    byte[] bArr3 = (byte[]) linkedList2.get(index);
+                    byte[] bArr4 = (byte[]) linkedList2.get(index2);
+                    Log.i(str, " buffer : " + e.a(bArr3));
+                    if (bArr3.length == 16 || bArr3.length == 29) {
+                        int manufacturer = getManufacturer(bArr3);
+                        int manufacturer2 = getManufacturer(bArr4);
+                        if (manufacturer == -1 || manufacturer2 == -1) {
+                            return null;
+                        }
+                        ZGHBDevice zGHBDevice = new ZGHBDevice(scanResult);
+                        setDeviceInfo(zGHBDevice, scanResult.getDevice().getName(), manufacturer, bArr3);
+                        if (zGHBDevice.getBleVersion() >= 5) {
+                            byte b = bArr3[14];
+                            byte b2 = bArr3[15];
+                            zGHBDevice.setCheckKeyFlag(b);
+                            zGHBDevice.setFirmwareFlag(b2);
+                        }
+                        int length = bArr4.length - 3;
+                        byte[] bArr5 = new byte[length];
+                        System.arraycopy(bArr4, 3, bArr5, 0, length);
+                        zGHBDevice.setState(bArr5);
+                        setDeviceName(linkedList, linkedList2, zGHBDevice);
+                        return zGHBDevice;
+                    }
+                    return null;
+                }
+                return null;
+            } else if (linkedList.contains(255)) {
+                int index3 = getIndex(linkedList, 255);
+                if (index3 == -1) {
+                    return null;
+                }
+                byte[] bArr6 = (byte[]) linkedList2.get(index3);
+                if (bArr6.length != 29) {
+                    return null;
+                }
+                int manufacturer3 = getManufacturer(bArr6);
+                if (manufacturer3 == -1) {
+                    return null;
+                }
+                ZGHBDevice zGHBDevice2 = new ZGHBDevice(scanResult);
+                setDeviceInfo(zGHBDevice2, scanResult.getDevice().getName(), manufacturer3, bArr6);
+                if (zGHBDevice2.getBleVersion() >= 5) {
+                    byte b3 = bArr6[14];
+                    byte b4 = bArr6[15];
+                    zGHBDevice2.setCheckKeyFlag(b3);
+                    zGHBDevice2.setFirmwareFlag(b4);
+                    byte[] bArr7 = new byte[11];
+                    System.arraycopy(bArr6, 16, bArr7, 0, 11);
+                    zGHBDevice2.setState(bArr7);
+                    byte[] bArr8 = new byte[2];
+                    bArr8[0] = bArr[27];
+                    bArr8[1] = bArr[28];
+                    zGHBDevice2.setRfu(bArr8);
+                } else {
+                    int length2 = bArr6.length - 16;
+                    byte[] bArr9 = new byte[length2];
+                    System.arraycopy(bArr6, 16, bArr9, 0, length2);
+                    zGHBDevice2.setRfu(bArr9);
+                }
+                setDeviceName(linkedList, linkedList2, zGHBDevice2);
+                return zGHBDevice2;
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+            return null;
+        }
+    }
+```
+
+# Friday 4 November 2022
+
+I have spent the last week reverse engineering what I think is the protocol from the disassembled Android app.  I went through the smali byte code line by line and ported it to Python.  It's included in this repo, but its nowhere need functional.  Or tested.
+
+Do you know why it's not tested?  Well stay tuned...
+
+Let's imagine that you're a manufacter of low cost consumer lighting products.  You've got a new product that you want to launch to the market, it's a BT LE controlled light and you're going to need a microcontroller with an RF remote and you're going to need an Android app and an iOS app.
+
+So you go to your head of software engineering and say "We need some control software for this new light we've got coming to the market.  You've got 2 weeks, 2 people and no money.  Get to work!".
+
+Your engineering team meet and they talk about what's needed.  One of the topics of conversation is how BT LE is a pretty unreliable communication mechansim and in order to make things more reliable and also a bit more secure, to stop all those naughty home automation nerds controlling your lights with their software, you should implement some form of encryption and checksum on the conversation.  Everyone agrees this is a good idea.  
+
+You spend a few hours working out a protocol which is easy enough to be implemented on the low end MCU you're working with and their very poorly documented SDK and you break off and one engineer goes to write the Android and iOS apps and one engineer goes off to write the firmware for the microcontroller.
+
+After a couple of days your engineer working on the firmware comes to a realisation that she's not getting paid enough for this crap, and that since her manager is an idiot and the app writer only knows how to use point-and-click app toolkits, no one is ever going to check that the C++ code.  So why bother spending all that time implementing and testing the encryption and CRC checking code, why not just assume it's correct and carry out the instructions?  Stupider like a FOX!
+
+So that's what they did.
+
+Once you connect to the device, set the MTU to 200, enable the notification on 0x0015 and perhaps send a couple of handshake packets, you're off to the races and you can send colour changing packets with scant regard for the packet counter at the start or the checksum at the end.  Just set them to FF, no one will ever know.
+
+And that is the story of how I wasted two weeks learning to read smali code and trying to make sense of an overly complex protocol.
+
+I don't suppose this is the last chapter of the story, but it is at least a beginning.
+
+Thanks for reading this far. I hope you had fun, I know I did.
+
