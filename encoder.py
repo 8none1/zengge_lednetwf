@@ -83,7 +83,7 @@ def encoder( p0, p1, p2, incoming_array):
                 print("Array to long")
                 return False
 
-        header = [0x5a, 0x71, 0x0, 0x11, 0x0, p1, get_packet_counter(), p2, 0x0, 0x0]
+        header = [0x5a, 0x71, 0x0, 0x11, 0x0, p1, get_packet_counter()]
 
         new_array = [None] * 26 # should be sized? 0x1a
 
