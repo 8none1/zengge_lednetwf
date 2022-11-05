@@ -22,6 +22,13 @@ I'm going to try and reverse engineer the BLE protocol and see if I can make it 
 
 If you're interested in helping out, please get in touch.  If you know of someone who has already worked this out let me know.
 
+
+## Current Status
+
+I think all the basic commands are worked out.  I need to make sense of the notifications.
+I will build an initial Python script to test everything works.
+
+
 ## Process
 
 I'm going to start by using HCI debugging in Android to capture the packets from the app to the device, then I will use Wireshark to view them.  As I see patterns I will write them down here.
@@ -111,6 +118,8 @@ This allows you to draw your own patterns on the device.  The message has 48 RRG
 
 ## Checksum
 The last byte appears to be a checksum, but I haven't worked out how to calculate it yet.
+Update: turns out you don't need to.
+
 
 # Latest news
 It turns out that once you've connected to the device, set the MTU and enabled notifications then the packet counter and checksum ARE COMPLETELY IGNORED.  Yup.  
