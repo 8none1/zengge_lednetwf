@@ -29,7 +29,8 @@ I think all the basic commands are worked out.  I need to make sense of the noti
 I will build an initial Python script to test everything works.
 
 
-https://user-images.githubusercontent.com/6552931/200133963-fdaa6d64-1095-41da-9a12-6e784027a089.mp4
+[vid.mp4.webm](https://user-images.githubusercontent.com/6552931/200139193-8668e011-3e02-4f38-b48c-0a247f3dc47d.webm)
+
 
 
 
