@@ -22,15 +22,19 @@ I'm going to try and reverse engineer the BLE protocol and see if I can make it 
 
 If you're interested in helping out, please get in touch.  If you know of someone who has already worked this out let me know.
 
+# Latest news
+## 2022-11-05
+See the video below.  I can command this thing from Python!
+
+## 2022-11-04
+It turns out that once you've connected to the device, set the MTU and enabled notifications then the packet counter and checksum ARE COMPLETELY IGNORED.  Yup.  
+You can read the whole horrific story in the scratch notes file.  A very rough, unfinished, and at this point abandoned attempt to reverse engineering the protocol exists in the file `encoder.py`.  It rather looks like we don't need any of that at the moment. Tomorrow I will craft some bash scripts to really shake down what we can do with this discovery.
 
 ## Current Status
 
 I think all the basic commands are worked out.  I need to make sense of the notifications.
-I will build an initial Python script to test everything works.
-
 
 [vid.mp4.webm](https://user-images.githubusercontent.com/6552931/200139193-8668e011-3e02-4f38-b48c-0a247f3dc47d.webm)
-
 
 
 
@@ -126,6 +130,4 @@ The last byte appears to be a checksum, but I haven't worked out how to calculat
 Update: turns out you don't need to.
 
 
-# Latest news
-It turns out that once you've connected to the device, set the MTU and enabled notifications then the packet counter and checksum ARE COMPLETELY IGNORED.  Yup.  
-You can read the whole horrific story in the scratch notes file.  A very rough, unfinished, and at this point abandoned attempt to reverse engineering the protocol exists in the file `encoder.py`.  It rather looks like we don't need any of that at the moment. Tomorrow I will craft some bash scripts to really shake down what we can do with this discovery.
+
