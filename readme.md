@@ -1,6 +1,7 @@
 # Zengge LEDnet WF Bluetooth LE reverse engineering
 
 Might also be known as:
+ - Zengge LEDnetWF
  - YBCRG-RGBWW 
  - Magic Hue
  - Bluetooth full colors selfie ring light
