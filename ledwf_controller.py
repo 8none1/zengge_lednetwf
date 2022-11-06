@@ -11,24 +11,69 @@ import time
 
 
 SERVICE_UUID = "0000ffff-0000-1000-8000-00805f9b34fb"
-NOTIFY_UUID =  "0000ff02-0000-1000-8000-00805f9b34fb"
-WRITE_UUID =   "0000ff01-0000-1000-8000-00805f9b34fb"
-COUNTER = 0
+NOTIFY_UUID  = "0000ff02-0000-1000-8000-00805f9b34fb"
+WRITE_UUID   = "0000ff01-0000-1000-8000-00805f9b34fb"
+COUNTER      = 0
+PIXEL_COUNT  = 48 # TODO: where does this come from?  We must be able to read it from the device
 
+
+# The control "packets" vary in size and content depending on the command.  The first two bytes
+# seem to be a counter that increments with each packet.  The last two bytes are a checksum.
+# However, the counter and checksum are seemingly ignored by the device, so you don't need to worry
+# about them.  However, I am keeping a packet counter in this script just in case it makes a difference.
+# There is a common "header" that is used for all packets. This is 80 00 00 and comes after the counter.
+
+# checksum is the last byte of the packet
+# general data area here ----------------------------------------V
+# length of packet from here to the end including checksum ---V (fun fact, copilot worked this out for me)
+# one less than the length above ? ------------------------v  | 
+# standard header --------------------------------v--v--v  |  |
+# counter ----------------------------------v--v  |  |  |  |  |
 INITIAL_PACKET         = bytearray.fromhex("00 01 80 00 00 04 05 0a 81 8a 8b 96")
 INITIAL_PACKET_2       = bytearray.fromhex("00 02 80 00 00 0c 0d 0b 10 14 16 0b 05 0d 36 36 06 00 0f d8")
 UNKNOWN_STATE_CHANGE   = bytearray.fromhex("00 45 80 00 00 05 06 0a 22 2a 2b 0f 86")
 UNKNOWN_STATE_CHANGE_2 = bytearray.fromhex("00 46 80 00 00 05 06 0a 11 1a 1b 0f 55")
-# There is possible a different white on/off packet
 ON_PACKET              = bytearray.fromhex("00 04 80 00 00 0d 0e 0b 3b 23 00 00 00 00 00 00 00 32 00 00 90")
 OFF_PACKET             = bytearray.fromhex("00 5b 80 00 00 0d 0e 0b 3b 24 00 00 00 00 00 00 00 32 00 00 91")
-# White bytes                                                                XX XX - bytes 11 & 12 0x00 to 0x64
-WHITE_PACKET           = bytearray.fromhex("00 10 80 00 00 0d 0e 0b 3b b1 00 00 00 1b 36 00 00 00 00 00 3d")
-# HSV bytes                                                               XX XX XX -  10, 11, 12 0x00 to 0x64
-HSV_PACKET             = bytearray.fromhex('00 05 80 00 00 0d 0e 0b 3b a1 00 64 64 00 00 00 00 00 00 00 00')
 
 
+# == Simple colour handling ==
+# checksum ---------------------------------------------------------------------------------------------v
+# White temperature and brightness ------------------------------------------------v--v                 |
+# HSV colour data --------------------------------------------------------v--v--v  |  |                 |
+# general data area here ----------------------------------------v        |     |  |  |                 |
+# length of packet from here to the end including checksum ---V  |        |     |  |  |                 |
+# length of packet from here without the checksum? --------v  |  |        |     |  |  |                 |
+# standard header --------------------------------v--v--v  |  |  |        |     |  |  |                 |
+# counter ----------------------------------v--v  |  |  |  |  |  |        |     |  |  |                 |
+HSV_PACKET             = bytearray.fromhex('00 05 80 00 00 0d 0e 0b 3b a1 00 64 64 00 00 00 00 00 00 00 00') # 10, 11, 12
+WHITE_PACKET           = bytearray.fromhex("00 10 80 00 00 0d 0e 0b 3b b1 00 00 00 1b 36 00 00 00 00 00 3d") # 13 & 14 
 
+# == Symphony Modes / effects ==
+
+# Brightness 1 - 100 ---------------------------------------------v
+# Speed 1 - 100 -----------------------------------------------v  |
+# effect number (1 - 113) ----------------------------------v  |  |
+# ? --------------------------------------------------v--v  |  |  |
+# length of packets from here to the end ----------v  |  |  |  |  |
+# length of packets minus 1 --------------------v  |  |  |  |  |  |
+# Standard header ---------------------v--v--v  |  |  |  |  |  |  |
+# counter -----------------------v--v  |  |  |  |  |  |  |  |  |  |
+MODE_PACKET = bytearray.fromhex("00 06 80 00 00 04 05 0b 38 01 01 64")
+
+# == Smear mode ==
+# checksum? ----------------------------------------------------------------------------------------------------------------------v
+# direction 0 or 1 for mode "stream" 2-----------------------------------------------------------------------------------------v  |
+# Brightness 0% - 100% -----------------------------------------------------------------------------------------------------v  |  |
+# Speed 0% - 100% ------------------------------------------------------------------------------------------------------ v  |  |  |
+# Mode. 1 = static, 2 = stream (check direction also) 3 = strobe  4 = jump  ------------------------------------------v  |  |  |  |
+# pixel by pixel RGB data 3 bytes * 48 pixels = 144 bytes ------------------------------v---------------------------v |  |  |  |  |
+# Length of packet from next byte to the end ----------------------------------v        |                           | |  |  |  |  |
+# Length of the packet without the checksum? -------------------------------v  |        |                           | |  |  |  |  |
+# more fixed header stuff -----------------------------------------v--v--v  |  |        |                           | |  |  |  |  |
+# counter ---------------------------------------------------v--v  |  |  |  |  |        |                           | |  |  |  |  |
+#                                                            |  |  |  |  |  |  |        |                           | |  |  |  |  |
+#                                                            00 10 80 00 00 96 97 0b 59 000000 ...[deleted]... 000000 02 64 64 00 23
 
 
 def logger(message):
@@ -41,29 +86,110 @@ def get_counter():
 
 def prepare_packet(packet):
     # Could add the 80 00 00 header here too
+    # For now this just adds the counter to the first two
+    # bytes of the packet.  As we have seen this doesn't seem to be 
+    # necessary though.  So we could skip this step.
     count = get_counter()
     packet[0] = 0xFF00 & count
     packet[1] = 0x00FF & count
     return packet
 
-def set_white(periph, ww, cw):
-    # Pass in the peripheral object and the white values
-    # the white values are percentages for warm white and cool white
-    if ww > 100:
-        ww = 100
-    if cw > 100:
-        cw = 100
-    global WHITE_PACKET
-    WHITE_PACKET[13] = ww
-    WHITE_PACKET[14] = cw
-    #periph.writeCharacteristic(WRITE_UUID, WHITE_PACKET)
+def send_prepared_packet(peripheral, packet):
+    peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(packet))
+
+def send_initial_packet(peripheral):
+    # This doesnt seem to make any difference, but it does generate a notification
+    # which we might be able to use to find the current status
+    initial_packet = INITIAL_PACKET
+    initial_packet = prepare_packet(initial_packet)
+    peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(initial_packet))
+
+
+def set_white(peripheral, temperature, brightness):
+    "Set colour temperature (0-100% warm to cool) and brightness (0-100%)"
+    # Pass in the peripheral object and the colour quality
+    # Colour temperature is from 0 warm to 100 cool
+    # Brightness is from 0 to 100
+    if brightness > 100: brightness = 100
+    if temperature > 100: temperature = 100
+    print(f"Setting white temperature to {temperature}% and {brightness}% brightness")
+    white_packet = WHITE_PACKET
+    white_packet[13] = temperature
+    white_packet[14] = brightness
+    peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(white_packet))
 
 def rgb_to_hsv(r,g,b):
     h, s, v = colorsys.rgb_to_hsv(r/255.0,g/255.0,b/255.0)
     h, s, v = int(h*360), int(s*100), int(v*100)
     h = int(h/2)
-    print(h,s,v)
     return [h,s,v]
+
+def set_rgb(peripheral, r, g, b):
+    logger(f"Setting RGB colour: {r}, {g}, {b}")
+    hsv = rgb_to_hsv(r,g,b)
+    hsv_packet = prepare_packet(HSV_PACKET)
+    hsv_packet[10] = hsv[0]
+    hsv_packet[11] = hsv[1]
+    hsv_packet[12] = hsv[2]
+    peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(hsv_packet))  
+
+def set_power(peripheral, power):
+    if power:
+        packet = prepare_packet(ON_PACKET)
+    else:
+        packet = prepare_packet(OFF_PACKET)
+    peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(packet))
+
+def build_smear_packet():
+    # Might be useful to make this a class, so you can fiddle the mode without rebuilding the whole packet?
+    "Builds an empty smear packet.  Still needs to be filled with the colour data and mode/speed/brightness"
+    global PIXEL_COUNT
+    smear_packet = bytearray.fromhex("00 00")
+    count = get_counter()
+    smear_packet[0] = (0xFF00 & count)
+    smear_packet[1] = (0x00FF & count)
+    smear_packet.extend([0x80, 0x00, 0x00])
+    smear_packet.extend([0x96, 0x97]) # this is the length stuff, which for smear packets on my device is 48 pixels plus the other bits. 
+    smear_packet.extend([0x0b, 0x59]) # not sure what this is yet
+    for i in range(PIXEL_COUNT):
+        smear_packet.extend([0x00, 0x00, 0x00]) # this is the rgb colour data.
+    smear_packet.extend([0x01, 0x64, 0x64, 0x00, 0x23])
+    return smear_packet
+
+def test_smear_pattern(packet):
+    "Pass in a built packet, and we will add a colour gradient and make is spin medium speed"
+    global PIXEL_COUNT
+    mode_byte       = 153
+    speed_byte      = 154
+    brightness_byte = 155
+    direction_byte  = 156
+    start_byte = 9
+    h = 1
+    colour_divisions = int(360 / PIXEL_COUNT)
+    for i in range(PIXEL_COUNT):
+        rgb = colorsys.hsv_to_rgb(h/360.0, 1, 1)
+        packet[start_byte]   = int(rgb[0] * 255)
+        packet[start_byte+1] = int(rgb[1] * 255)
+        packet[start_byte+2] = int(rgb[2] * 255)
+        start_byte += 3
+        h += colour_divisions
+    packet[mode_byte] = 2
+    packet[speed_byte] = 50
+    packet[brightness_byte] = 100
+    packet[direction_byte] = 1
+    #print(f"Sending smear packet: {packet.hex()}")
+    return packet
+
+def set_mode(peripheral, mode, speed, brightness):
+    "Modes are numbered 1 to 113."
+    mode_packet = MODE_PACKET
+    count = get_counter()
+    mode_packet[0]  = (0xFF00 & count)
+    mode_packet[1]  = (0x00FF & count)
+    mode_packet[9]  = mode
+    mode_packet[10] = speed
+    mode_packet[11] = brightness
+    peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(mode_packet))
 
 def connect_to_device(mac_addr):
     print("Connecting to device" + mac_addr)
@@ -78,14 +204,11 @@ def connect_to_device(mac_addr):
         for descriptor in descriptors:
             print(descriptor)
     return lednetwf_device
-    
-
 
 def find_devices():
     lednetwfs = {}
     scanner = Scanner().withDelegate(ScanDelegate())
     devices = scanner.scan(10.0)
-
     for dev in devices:
         for (adtype, desc, value) in dev.getScanData():
             if desc == "Complete Local Name" and value.startswith("LEDnetWF"):
@@ -126,6 +249,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "--connect":
     # There are no examples of how to instantiate a peripheral object from a mac address
     # if probably can be done, but I cant work it out from the source, so for now
     # just use scan to find it by name
+    print("Scanning for devices")
     adapter.scan_for(5000)
     peripherals = adapter.scan_get_results()
     for peripheral in peripherals:
@@ -141,58 +265,34 @@ if len(sys.argv) > 1 and sys.argv[1] == "--connect":
                         for descriptor in characteristic.descriptors():
                             print(f"\t\tDescriptor: {descriptor.uuid()}")
                 peripheral.notify(SERVICE_UUID, NOTIFY_UUID, lambda data: print(f"Received data: {data}"))
-                initial_packet_write = INITIAL_PACKET
-                initial_packet_write = prepare_packet(initial_packet_write)
-                # This doesnt seem to make any difference, but it does generate a notification
-                # which we might be able to use to find the current status
-                peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(initial_packet_write))
-                time.sleep(5)
+                send_initial_packet(peripheral)
                 print("Turning on")
-                on_packet_write = ON_PACKET
-                on_packet_write = prepare_packet(on_packet_write)
-                peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(on_packet_write))
+                set_power(peripheral, True)
+                time.sleep(2)
+                set_white(peripheral, 100, 50)
                 time.sleep(5)
-                # print("Switching to RGB mode")
-                # unknown_state_packet_write = UNKNOWN_STATE_CHANGE
-                # unknown_state_packet_write = prepare_packet(unknown_state_packet_write)
-                # peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(unknown_state_packet_write))
-                # #time.sleep(5)
-                # unknown_state_packet_write = UNKNOWN_STATE_CHANGE_2
-                # unknown_state_packet_write = prepare_packet(unknown_state_packet_write)
-                # peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(unknown_state_packet_write))
-                # time.sleep(5)
-
-                
-
-                hsv_packet_write = prepare_packet(HSV_PACKET)
-                hsv = rgb_to_hsv(255,0,0)
-                hsv_packet_write[10]  = hsv[0]
-                hsv_packet_write[11]  = hsv[1]
-                hsv_packet_write[12] = hsv[2]
-                print("Setting colour: red")
-                peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(hsv_packet_write))
+                set_white(peripheral, 0, 50)
                 time.sleep(5)
-                hsv = rgb_to_hsv(0,255,0)
-                hsv_packet_write[10]  = hsv[0]
-                hsv_packet_write[11]  = hsv[1]
-                hsv_packet_write[12] = hsv[2]
-                print("Setting colour: green")
-                peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(hsv_packet_write))
+                set_rgb(peripheral, 255, 0, 0)
                 time.sleep(5)
-                hsv = rgb_to_hsv(0,0,255)
-                hsv_packet_write[10]  = hsv[0]
-                hsv_packet_write[11]  = hsv[1]
-                hsv_packet_write[12] = hsv[2]
-                print("Setting colour: blue")
-                peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(hsv_packet_write))                
+                set_rgb(peripheral, 0, 255, 0)
                 time.sleep(5)
+                set_rgb(peripheral, 0, 0, 255)
+                time.sleep(5)
+                for m in range(10):
+                    print(f"Setting mode: {m}")
+                    set_mode(peripheral, m, 50, 100)
+                    time.sleep(5)
+                p = build_smear_packet()
+                p = test_smear_pattern(p)
+                send_prepared_packet(peripheral, p)
+                time.sleep(10)
                 print("Turning off")
-                off_packet_write = OFF_PACKET
-                off_packet_write = prepare_packet(off_packet_write)
-                peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(off_packet_write))
-
+                set_power(peripheral, False)
             finally:
                 peripheral.disconnect()
+
+
 
             
 
