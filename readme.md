@@ -23,19 +23,15 @@ I'm going to try and reverse engineer the BLE protocol and see if I can make it 
 If you're interested in helping out, please get in touch.  If you know of someone who has already worked this out let me know.
 
 # Latest news
+## 2022-11-06
+Pretty much implemented all the features I needed to in order to achieve the functionality I wanted.  This readme file will now be upgraded in to an explanation of the protocol so that people can try and make use of this in their own projects.  Next on the plan is to work out the notifications and to port this to an ESP32.  New video posted below.
+
 ## 2022-11-05
-See the video below.  I can command this thing from Python!
+I can command this thing from Python!
 
 ## 2022-11-04
 It turns out that once you've connected to the device, set the MTU and enabled notifications then the packet counter and checksum ARE COMPLETELY IGNORED.  Yup.  
 You can read the whole horrific story in the scratch notes file.  A very rough, unfinished, and at this point abandoned attempt to reverse engineering the protocol exists in the file `encoder.py`.  It rather looks like we don't need any of that at the moment. Tomorrow I will craft some bash scripts to really shake down what we can do with this discovery.
-
-## Current Status
-
-I think all the basic commands are worked out.  I need to make sense of the notifications.
-
-[vid.mp4.webm](https://user-images.githubusercontent.com/6552931/200139193-8668e011-3e02-4f38-b48c-0a247f3dc47d.webm)
-
 
 
 ## Process
@@ -44,39 +40,8 @@ I'm going to start by using HCI debugging in Android to capture the packets from
 You can tell Wireshark to filter out only BLE ATT write commands with this filter: `btatt.opcode.method==0x12`
 I should be able to test basic assumptions with `gatttool` on Linux.  Eventually I would like to write a Python script or an MQTT bridge in C++ on an ESP32.
 
-## Initial Investigation
+# Protocol
 
-In the file `add on_off_hci.log` I opened the app and switched the main power on and off 5 times.
-That results in payloads that look like:
-
-```
-0000   02 02 00 1c 00 18 00 04 00 12 17 00 00 04 80 00   ................
-0010   00 0d 0e 0b 3b 24 00 00 00 00 00 00 00 32 00 00   ....;$.......2..
-0020   91                                                .
-```
-
-and
-
-```
-0000   02 02 00 1c 00 18 00 04 00 12 17 00 00 05 80 00   ................
-0010   00 0d 0e 0b 3b 23 00 00 00 00 00 00 00 32 00 00   ....;#.......2..
-0020   90                                                .
-```
-
-repeated 5 times.  So I assume that these mean "on" and "off".
-
-I will keep on in this manner until I understand more.
-
-Have a look at the [scratch notes file](https://github.com/8none1/zengge_lednetwf/blob/main/scratchnotes.md) to see where I've got to.
-
-# Example Packets (arbitary grouping of bytes for my benefit)
-- On       `0004 800000 0d0e0b3b 23 000000 0000 0000 32 0000 90`
-- RGB      `0007 800000 0d0e0b3b a1 3c6464 0000 0000 00 0000 e0`
-- White    `000c 800000 0d0e0b3b b1 000000 642e 0000 00 0000 7e`
-- Symphony `0012 800000 04 05 0b 38 01 64 64`
-- Smear    `020200a500a1000 400121700 0007 800000 96970b59 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 0000ff 000000 000000 000000 0000ff 0000ff 0000ff 01333200 92`
-
-# Secondary Investigation
 ## Counter - bytes 0 & 1
 The first two bytes of the written value are a counter of some kind.  It increments by 1 each time a command is sent and seems to reset each time the app opens.  So a per session counter?  Should be easy to implement and test.
 

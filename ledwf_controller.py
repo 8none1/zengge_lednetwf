@@ -280,6 +280,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "--connect":
                 set_rgb(peripheral, 0, 0, 255)
                 time.sleep(5)
                 for m in range(10):
+                    m += 1
                     print(f"Setting mode: {m}")
                     set_mode(peripheral, m, 50, 100)
                     time.sleep(5)
