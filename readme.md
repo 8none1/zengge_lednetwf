@@ -37,8 +37,7 @@ https://user-images.githubusercontent.com/6552931/200186465-590ff263-4d1e-49c9-a
 
 
 There are still some things that need doing:
- - Make use of the status updates it sends back
- - How does it describe the number of LEDs it has? (I have some theories already about this, just need to test them)
+ - How does it describe the number of LEDs it has? (I have some theories already about this, just need to test them).  Theory tested, it was wrong.  I think they need you to tell them.
 
 ## 2022-11-05
 I can command this thing from Python!
@@ -148,6 +147,45 @@ The packets are 170 bytes long for a 48 LED device.
 #                                                            |  |  |  |  |  |  |  |   | |                           | |  |  |  |  |
 #                                                            00 10 80 00 00 96 97 0b 59 000000 ...[deleted]... 000000 02 64 64 00 23
 ```
+
+## Response data
+
+Once you have enabled notifications (which you seem to have to do in order for it to accept commands) you will receive a message on every state change.  The format of that message is 8 bytes of some kind of header, followed by a hex encoded string which resembles a JSON object.  If you convert who whole hex string to text it looks like this:
+```
+€��34
+{"code":0,"payload":"811D24610F313232FF640200305C"}
+```
+
+The header includes a counter, and some other numbers which I haven't worked out.
+
+The payload in the JSON object reflects what is currently going on with the device. I haven't worked it all out yet, but it can be largely understood as:
+```
+# checksum? ----------------------------------------------------------------------v
+# I thought this might be LED count, but maybe not ----------------------------v  |
+# unknown data ----------------------------------------------------------v--v  |  |
+# white temperature --------------------------------------------------v  |  |  |  |
+# blue ------------------------------------------------------------v  |  |  |  |  |
+# green --------------------------------------------------------v  |  |  |  |  |  |
+# red -------------------------------------------------------v  |  |  |  |  |  |  |
+# brightness ---------------------------------------------v  |  |  |  |  |  |  |  |
+# guess mode ------------------------------------------v  |  |  |  |  |  |  |  |  |
+# unknown ------------------------------------------v  |  |  |  |  |  |  |  |  |  |
+# off = 24, on = 23 -----------------------------v  |  |  |  |  |  |  |  |  |  |  |
+# fixed -----------------------------------v--v  |  |  |  |  |  |  |  |  |  |  |  |
+#                                          81 1D 24 24 02 00 64 32 FF 00 02 00 30 AF
+#                                          81 1D 23 61 0F 31 64 32 FF 64 02 00 30 8D
+#                                          81 1D 23 61 0F 31 64 32 FF 00 02 00 30 29
+#                                          81 1D 23 61 F0 00 FF 00 00 00 02 00 30 43
+#                                          81 1D 23 61 F0 00 00 FF 00 00 02 00 30 43
+#                                          81 1D 23 61 F0 00 00 00 FF 00 02 00 30 43
+#                                          81 1D 23 25 01 00 64 32 FF 00 02 00 30 AE
+#                                          81 1D 23 25 02 00 64 32 FF 00 02 00 30 AF
+#                                          81 1D 23 25 03 00 64 32 FF 00 02 00 30 B0
+#                                          81 1D 23 25 04 00 64 32 FF 00 02 00 30 B1
+#                                          81 1D 23 25 05 00 64 32 FF 00 02 00 30 B2
+```
+
+
 
 # Tools
 

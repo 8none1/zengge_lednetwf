@@ -25,10 +25,11 @@ PIXEL_COUNT  = 48 # TODO: where does this come from?  We must be able to read it
 
 # checksum is the last byte of the packet
 # general data area here ----------------------------------------V
+# 0b seems to be for colour and mode stuff, 0a is "other" -------v
 # length of packet from here to the end including checksum ---V (fun fact, copilot worked this out for me)
-# one less than the length above ? ------------------------v  | 
-# standard header --------------------------------v--v--v  |  |
-# counter ----------------------------------v--v  |  |  |  |  |
+# one less than the length above ? ------------------------v  |  |
+# standard header --------------------------------v--v--v  |  |  |
+# counter ----------------------------------v--v  |  |  |  |  |  |
 INITIAL_PACKET         = bytearray.fromhex("00 01 80 00 00 04 05 0a 81 8a 8b 96")
 INITIAL_PACKET_2       = bytearray.fromhex("00 02 80 00 00 0c 0d 0b 10 14 16 0b 05 0d 36 36 06 00 0f d8")
 UNKNOWN_STATE_CHANGE   = bytearray.fromhex("00 45 80 00 00 05 06 0a 22 2a 2b 0f 86")
@@ -41,7 +42,7 @@ OFF_PACKET             = bytearray.fromhex("00 5b 80 00 00 0d 0e 0b 3b 24 00 00 
 # checksum ---------------------------------------------------------------------------------------------v
 # White temperature and brightness ------------------------------------------------v--v                 |
 # HSV colour data --------------------------------------------------------v--v--v  |  |                 |
-# general data area here ----------------------------------------v        |     |  |  |                 |
+# ?                      ----------------------------------------v        |     |  |  |                 |
 # length of packet from here to the end including checksum ---V  |        |     |  |  |                 |
 # length of packet from here without the checksum? --------v  |  |        |     |  |  |                 |
 # standard header --------------------------------v--v--v  |  |  |        |     |  |  |                 |
@@ -76,6 +77,26 @@ MODE_PACKET = bytearray.fromhex("00 06 80 00 00 04 05 0b 38 01 01 64")
 #                                                            00 10 80 00 00 96 97 0b 59 000000 ...[deleted]... 000000 02 64 64 00 23
 
 
+# Response data
+# 0x30 = 48 decimal which is how many leds this thing has (makes no diff) -----v
+# blue ------------------------------------------------------------v           |
+# green --------------------------------------------------------v  |           |
+# red -------------------------------------------------------v  |  |           |
+# guess mode ------------------------------------------v     |  |  |           |
+# guess off = 24, on = 23 -----------------------v     |     |  |  |           |
+# fixed -----------------------------------v--v  |     |     |  |  |           |
+#                                          81 1D 24 24 02 00 64 32 FF 00 02 00 30 AF
+#                                          81 1D 23 61 0F 31 64 32 FF 64 02 00 30 8D
+#                                          81 1D 23 61 0F 31 64 32 FF 00 02 00 30 29
+#                                          81 1D 23 61 F0 00 FF 00 00 00 02 00 30 43
+#                                          81 1D 23 61 F0 00 00 FF 00 00 02 00 30 43
+#                                          81 1D 23 61 F0 00 00 00 FF 00 02 00 30 43
+#                                          81 1D 23 25 01 00 64 32 FF 00 02 00 30 AE
+#                                          81 1D 23 25 02 00 64 32 FF 00 02 00 30 AF
+#                                          81 1D 23 25 03 00 64 32 FF 00 02 00 30 B0
+#                                          81 1D 23 25 04 00 64 32 FF 00 02 00 30 B1
+#                                          81 1D 23 25 05 00 64 32 FF 00 02 00 30 B2
+
 def logger(message):
     print(message)
 
@@ -104,6 +125,12 @@ def send_initial_packet(peripheral):
     initial_packet = prepare_packet(initial_packet)
     peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(initial_packet))
 
+def send_initial_packet2(peripheral):
+    # This doesnt seem to make any difference, but it does generate a notification
+    # which we might be able to use to find the current status
+    initial_packet = INITIAL_PACKET_2
+    initial_packet = prepare_packet(initial_packet)
+    peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(initial_packet))
 
 def set_white(peripheral, temperature, brightness):
     "Set colour temperature (0-100% warm to cool) and brightness (0-100%)"
@@ -223,6 +250,47 @@ def find_devices():
     else:
         print("No devices found")
 
+def response_decode(response):
+    print(f"Response: {response.hex()}")
+    response_str = response.decode("utf-8", errors="ignore")
+    last_quote = response_str.rfind('"')
+    if last_quote > 0:
+        first_quote = response_str.rfind('"', 0, last_quote)
+        if first_quote > 0:
+            payload = response_str[first_quote+1:last_quote]
+        else:
+            return None
+    else:
+        return None
+    
+    print(f"Payload: {payload}")
+    response = bytearray.fromhex(payload)
+    power = response[2]
+    if power == 0x23:
+        print("Power: ON")
+    elif power == 0x24:
+        print("Power: OFF")
+
+    mode = response[4]
+
+    if mode == 0xF0:
+        # RGB mode
+        r,g,b = response[6], response[7], response[8]
+        print(f"RGB: {r}, {g}, {b}")
+    elif mode == 0x0F:
+        # White mode
+        temp, brightness = response[9], response[5]
+        print(f"White Temperature: {temp}, Brightness: {brightness}")
+    elif mode > 0x0 and mode < 0x72:
+        # Symphony modes
+        print(f"Symphony Mode: {mode}")
+        brightness = response[6]
+        speed = response[7]
+        print(f"Speed: {speed}, Brightness: {brightness}")
+    else:
+        print(f"Mode: {mode}")
+        print(f"Payload: {payload}")
+        response = bytearray.fromhex(payload)
 
 
 adapters = simplepyble.Adapter.get_adapters()
@@ -264,32 +332,39 @@ if len(sys.argv) > 1 and sys.argv[1] == "--connect":
                         print(f"\tCharacteristic: {characteristic.uuid()}")
                         for descriptor in characteristic.descriptors():
                             print(f"\t\tDescriptor: {descriptor.uuid()}")
-                peripheral.notify(SERVICE_UUID, NOTIFY_UUID, lambda data: print(f"Received data: {data}"))
+                peripheral.notify(SERVICE_UUID, NOTIFY_UUID, response_decode)
                 send_initial_packet(peripheral)
+                send_initial_packet2(peripheral)
+                time.sleep(2)
+                peripheral.disconnect()
+                sys.exit(0)
                 print("Turning on")
                 set_power(peripheral, True)
                 time.sleep(2)
+                # Use to debug response packets
+                # while True:
+                #     time.sleep(1)
                 set_white(peripheral, 100, 50)
                 time.sleep(5)
-                set_white(peripheral, 0, 50)
+                set_white(peripheral, 75, 50)
                 time.sleep(5)
-                set_rgb(peripheral, 255, 0, 0)
+                set_white(peripheral, 50, 50)
                 time.sleep(5)
-                set_rgb(peripheral, 0, 255, 0)
-                time.sleep(5)
-                set_rgb(peripheral, 0, 0, 255)
-                time.sleep(5)
-                for m in range(10):
+
+                for m in range(5):
                     m += 1
                     print(f"Setting mode: {m}")
                     set_mode(peripheral, m, 50, 100)
                     time.sleep(5)
+                
                 p = build_smear_packet()
                 p = test_smear_pattern(p)
                 send_prepared_packet(peripheral, p)
                 time.sleep(10)
+
                 print("Turning off")
                 set_power(peripheral, False)
+                time.sleep(2)
             finally:
                 peripheral.disconnect()
 
