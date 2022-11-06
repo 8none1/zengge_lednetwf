@@ -30,7 +30,7 @@ Most of the features are now supported.  With the decoded protocols you can:
  - Create your own pixel by pixel patterns, called "smear" in the app.
 
 Here's a demo of stepping through those features:
-https://user-images.githubusercontent.com/6552931/200182609-aba65b5a-5c48-4000-859a-df3c6117ea22.mp4
+[![Video](https://user-images.githubusercontent.com/6552931/200182609-aba65b5a-5c48-4000-859a-df3c6117ea22.mp4)]
 
 There are still some things that need doing:
  - Make use of the status updates it sends back
@@ -74,7 +74,9 @@ These are common to all payloads.
 
 ## Power control
 Example bytes `ON`:  `00 04 80 00 00 0d 0e 0b 3b 23 00 00 00 00 00 00 00 32 00 00 90`
+
 Example bytes `OFF`: `00 5b 80 00 00 0d 0e 0b 3b 24 00 00 00 00 00 00 00 32 00 00 91`
+
 
 ```
 # checksum is the last byte of the packet --------------------------------------------------------------v
