@@ -318,7 +318,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "--scan":
                 print(f"\t\tManufacturer data: {value}")
                 print(' '.join(format(x, '02x') for x in value))
 
-if len(sys.argv) > 1 and sys.argv[1] == "--connect":
+elif len(sys.argv) > 1 and sys.argv[1] == "--connect":
     # There are no examples of how to instantiate a peripheral object from a mac address
     # if probably can be done, but I cant work it out from the source, so for now
     # just use scan to find it by name
@@ -369,10 +369,9 @@ if len(sys.argv) > 1 and sys.argv[1] == "--connect":
                 time.sleep(2)
             finally:
                 peripheral.disconnect()
+else:
+    print("Pass in either --scan or --connect")
 
-
-
-            
 
 
 

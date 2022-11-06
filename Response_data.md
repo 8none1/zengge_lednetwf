@@ -18,7 +18,7 @@ In summary: nothing very interesting
 
 The JSON payload looks like:
 
-0x30 = 48 decimal which is how many leds this thing has ---------------------v
+0x30 = 48 decimal which is how many leds this thing has (makes no diff) -----v
 blue ------------------------------------------------------------v           |
 green --------------------------------------------------------v  |           |
 red -------------------------------------------------------v  |  |           |
@@ -101,12 +101,12 @@ Setting mode: 10
 81 1D 23 61 0F 31 64 32 FF 64 02 00 30 8D - Setting white temperature to 100% and 50% brightness
 81 1D 23 61 0F 31 64 32 FF 00 02 00 30 29 - Setting white temperature to 0% and 50% brightness
 
-could still be led count  ----------v
-temperature ---------------v        |
-mode -                     |        |
-white br ------v           |        |
-mode--------v  |           |        |
-            |  |           |        |
+
+temperature ---------------v        
+mode -                     |        
+white br ------v           |        
+mode--------v  |           |        
+            |  |           |        
 81 1D 23 61 0F 31 64 32 FF 64 02 00 30 8D - Setting white temperature to 100% and 50% brightness
 81 1D 23 61 0F 31 64 32 FF 4B 02 00 30 74 - Setting white temperature to 75% and 50% brightness
 81 1D 23 61 0F 31 64 32 FF 32 02 00 30 5B - Setting white temperature to 50% and 50% brightness
@@ -125,7 +125,7 @@ mode--------v  |           |        |
 
 
 
-
+                           b  s
 Payload: 81 1D 23 25 02 00 64 32 FF 00 02 00 30 AF Mode: 2
 Payload: 81 1D 23 25 03 00 64 32 FF 00 02 00 30 B0 mode: 3
 Payload: 81 1D 23 25 04 00 64 32 FF 00 02 00 30 B1 Mode: 4
@@ -135,3 +135,18 @@ Payload: 81 1D 23 25 07 00 64 32 FF 00 02 00 30 B4 Mode: 7
 Payload: 81 1D 23 25 08 00 64 32 FF 00 02 00 30 B5 Mode: 8 
 Payload: 81 1D 23 25 09 00 64 32 FF 00 02 00 30 B6 Mode: 9
 Payload: 81 1D 23 25 0A 00 64 32 FF 00 02 00 30 B7 Mode: 10 
+
+
+# Small vs big ring
+
+
+small first packet:  811D2425FF00323200000200307C 
+
+  big 81 1D 23 61 0F 31 32 32 FF 64 02 00 30 5B
+040180000033340a
+
+
+small 81 1D 24 24 02 00 64 32 FF 00 02 00 30 AF
+
+sml   04 02 80 00 00 33 34 0a
+bigm  04 01 80 00 00 33 34 0a
