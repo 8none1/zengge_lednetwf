@@ -78,13 +78,18 @@ MODE_PACKET = bytearray.fromhex("00 06 80 00 00 04 05 0b 38 01 01 64")
 
 
 # Response data
-# 0x30 = 48 decimal which is how many leds this thing has (makes no diff) -----v
-# blue ------------------------------------------------------------v           |
-# green --------------------------------------------------------v  |           |
-# red -------------------------------------------------------v  |  |           |
-# guess mode ------------------------------------------v     |  |  |           |
-# guess off = 24, on = 23 -----------------------v     |     |  |  |           |
-# fixed -----------------------------------v--v  |     |     |  |  |           |
+# checksum? ----------------------------------------------------------------------v
+# I thought this might be LED count, but maybe not ----------------------------v  |
+# unknown data ----------------------------------------------------------v--v  |  |
+# white temperature --------------------------------------------------v  |  |  |  |
+# blue ------------------------------------------------------------v  |  |  |  |  |
+# green --------------------------------------------------------v  |  |  |  |  |  |
+# red -------------------------------------------------------v  |  |  |  |  |  |  |
+# brightness ---------------------------------------------v  |  |  |  |  |  |  |  |
+# guess mode ------------------------------------------v  |  |  |  |  |  |  |  |  |
+# unknown ------------------------------------------v  |  |  |  |  |  |  |  |  |  |
+# off = 24, on = 23 -----------------------------v  |  |  |  |  |  |  |  |  |  |  |
+# fixed -----------------------------------v--v  |  |  |  |  |  |  |  |  |  |  |  |
 #                                          81 1D 24 24 02 00 64 32 FF 00 02 00 30 AF
 #                                          81 1D 23 61 0F 31 64 32 FF 64 02 00 30 8D
 #                                          81 1D 23 61 0F 31 64 32 FF 00 02 00 30 29
@@ -251,7 +256,7 @@ def find_devices():
         print("No devices found")
 
 def response_decode(response):
-    print(f"Response: {response.hex()}")
+    #print(f"Response: {response.hex()}")
     response_str = response.decode("utf-8", errors="ignore")
     last_quote = response_str.rfind('"')
     if last_quote > 0:
@@ -334,10 +339,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "--connect":
                             print(f"\t\tDescriptor: {descriptor.uuid()}")
                 peripheral.notify(SERVICE_UUID, NOTIFY_UUID, response_decode)
                 send_initial_packet(peripheral)
-                send_initial_packet2(peripheral)
-                time.sleep(2)
-                peripheral.disconnect()
-                sys.exit(0)
+                #send_initial_packet2(peripheral)
                 print("Turning on")
                 set_power(peripheral, True)
                 time.sleep(2)
