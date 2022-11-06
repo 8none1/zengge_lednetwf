@@ -26,6 +26,12 @@ If you're interested in helping out, please get in touch.  If you know of someon
 ## 2022-11-06
 Pretty much implemented all the features I needed to in order to achieve the functionality I wanted.  This readme file will now be upgraded in to an explanation of the protocol so that people can try and make use of this in their own projects.  Next on the plan is to work out the notifications and to port this to an ESP32.  New video posted below.
 
+
+https://user-images.githubusercontent.com/6552931/200182609-aba65b5a-5c48-4000-859a-df3c6117ea22.mp4
+
+
+
+
 ## 2022-11-05
 I can command this thing from Python!
 
