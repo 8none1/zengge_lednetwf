@@ -151,10 +151,9 @@ The packets are 170 bytes long for a 48 LED device.
 
 ## Response data
 
-Once you have enabled notifications (which you seem to have to do in order for it to accept commands) you will receive a message on every state change.  The format of that message is 8 bytes of some kind of header, followed by a hex encoded string which resembles a JSON object.  If you convert who whole hex string to text it looks like this:
+Once you have enabled notifications (which you seem to have to do in order for it to accept commands) you will receive a message on every state change.  The format of that message is 8 bytes of some kind of header, followed by a hex encoded string which resembles a JSON object.  If you convert the whole hex string to text it looks like this:
 ```
-€��34
-{"code":0,"payload":"811D24610F313232FF640200305C"}
+€��34 {"code":0,"payload":"811D24610F313232FF640200305C"}
 ```
 
 The header includes a counter, and some other numbers which I haven't worked out.
