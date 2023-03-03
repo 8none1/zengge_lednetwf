@@ -78,7 +78,7 @@ MODE_PACKET = bytearray.fromhex("00 06 80 00 00 04 05 0b 38 01 01 64")
 
 
 # Response data
-# checksum? ----------------------------------------------------------------------v
+# checksum - checksum is add all the bytes except the checksum AND 0xFF ----------v
 # I thought this might be LED count, but maybe not ----------------------------v  |
 # unknown data ----------------------------------------------------------v--v  |  |
 # white temperature --------------------------------------------------v  |  |  |  |

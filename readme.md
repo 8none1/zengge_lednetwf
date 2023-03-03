@@ -161,7 +161,7 @@ The header includes a counter, and some other numbers which I haven't worked out
 
 The payload in the JSON object reflects what is currently going on with the device. I haven't worked it all out yet, but it can be largely understood as:
 ```
-# checksum? ----------------------------------------------------------------------v
+# checksum SUM of all the bytes except checksum AND 0xFF -------------------------v
 # I thought this might be LED count, but maybe not ----------------------------v  |
 # unknown data ----------------------------------------------------------v--v  |  |
 # white temperature --------------------------------------------------v  |  |  |  |
@@ -185,6 +185,8 @@ The payload in the JSON object reflects what is currently going on with the devi
 #                                          81 1D 23 25 04 00 64 32 FF 00 02 00 30 B1
 #                                          81 1D 23 25 05 00 64 32 FF 00 02 00 30 B2
 ```
+
+Thanks to [bdraco](https://github.com/8none1/zengge_lednetwf/issues/1) for pointing me at the flux_led code which has the exact same status packets.
 
 
 
