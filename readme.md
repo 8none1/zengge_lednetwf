@@ -83,7 +83,7 @@ Example bytes `OFF`: `00 5b 80 00 00 0d 0e 0b 3b 24 00 00 00 00 00 00 00 32 00 0
 
 
 ```
-# checksum is the last byte of the packet --------------------------------------------------------------v
+# checksum is the last byte of the packet seems to be sum of bytes from the `3b` not inc. checksum -----v
 # unknown -------------------------------------------------------------------------------v------------v |
 # Likely to be colour information per HSV/WW packets ---------------------v-----------v  |            | |
 # on = 0x23 off = 0x24 ------------------------------------------------v  |           |  |            | |
