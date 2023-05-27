@@ -320,7 +320,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "--scan":
 
 elif len(sys.argv) > 1 and sys.argv[1] == "--connect":
     # There are no examples of how to instantiate a peripheral object from a mac address
-    # if probably can be done, but I cant work it out from the source, so for now
+    # it probably can be done, but I can't work it out from the source, so for now
     # just use scan to find it by name
     print("Scanning for devices")
     adapter.scan_for(5000)
