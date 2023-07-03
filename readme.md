@@ -1,3 +1,8 @@
+# Update 2023-07-03
+
+Check out raulgbcr's project to add support for these lights to Home Assistant:  https://github.com/raulgbcr/lednetwf_ble
+
+
 # Zengge LEDnet WF Bluetooth LE reverse engineering
 
 Might also be known as:
