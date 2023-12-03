@@ -4,6 +4,7 @@ A combination of 8 bytes of hex, then a JSON like string.
 
 8 bytes format of:
 
+```
 seems fixed -----------------------------------------------------v------v
 the same 80 00 00 we see elsewhere ---------------------v------v |      |
 counter ---------------------------------------------v  |      | |      |
@@ -13,11 +14,13 @@ counter ---------------------------------------------v  |      | |      |
                                                  `04 61 80 00 00 33 34 0c`
                                                  `04 62 80 00 00 33 34 0c`
                                                  `04 63 80 00 00 33 34 0c`
+```
 
 In summary: nothing very interesting
 
 The JSON payload looks like:
 
+```
 0x30 = 48 decimal which is how many leds this thing has (makes no diff) -----v
 blue ------------------------------------------------------------v           |
 green --------------------------------------------------------v  |           |
@@ -36,6 +39,7 @@ fixed -----------------------------------v--v  |     |     |  |  |           |
                                          81 1D 23 25 03 00 64 32 FF 00 02 00 30 B0
                                          81 1D 23 25 04 00 64 32 FF 00 02 00 30 B1
                                          81 1D 23 25 05 00 64 32 FF 00 02 00 30 B2
+```
 
 {"code":0,"payload":"81 1D 24 24 02 00 64 32 FF 00 02 00 30 AF"}'.
 {"code":0,"payload":"811D232402006432FF00020030AE"}'.
