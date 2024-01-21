@@ -11,6 +11,8 @@ Might also be known as:
  - Magic Hue
  - Bluetooth full colors selfie ring light
 
+There are other ZENGGE devices with similar names. For example, there are small black USB Bluetooth LED controllers bundled with light strips, which can be used with any WS2812B lights with 3-pin connector. They show up as "LEDnetWF0200A3" plus the last six digits of their MAC. While the app uses different commands than those below, they will still accept some of them (namely on/off, HSL colors and symphony, but with only 100 effects).
+
 
 ## Background
 I bought one of these neat looking RGB WW ring lamp things off [Ali Express](https://www.aliexpress.com/item/1005004712536400.html?spm=a2g0o.order_list.0.0.21ef1802Yiov0S):
@@ -54,7 +56,7 @@ You can read the whole horrific story in the scratch notes file.  A very rough, 
 
 # Process
 
-I used HCI logging from the debug menu in Android to capture the packets going from the app to the device.  I then copied those to my main machine using `adb pull sdcard/btsnoop_hci.log <local filename>`.  There are many logs captured in the `btsnoop_logs` directory if you want to have a look.
+I used HCI logging from the debug menu in Android to capture the packets going from the app to the device. It must be enabled before enabling Bluetooth.  I then copied those to my main machine using `adb pull sdcard/btsnoop_hci.log <local filename>`.  There are many logs captured in the `btsnoop_logs` directory if you want to have a look. Depending on your phone, there might be easier ways to retrieve the log. For example, Xiaomi users can just dial `*#*#284#*#*` to make copies of the two most recent logs spawn in the user-accessible files (the exact location depends on the device).
 I also decompiled the Zengee app in to Smali code and made an attempt to reverse engineer the "encryption" and checksum routines.  However, I abandoned this work when I discovered that you don't need to concern yourself with things like making sure the checksums are correct, because the device doesn't care.
 
 Some tips for doing this sort of HCI log reverse engineering:
@@ -75,11 +77,16 @@ Ok, on to the actual information.
 # Protocol
 
 ## Header
-These are common to all payloads.
- - The first two bytes (0,1) are a counter which increments after every write.  I haven't seen the counter roll over to use byte zero yet, but I assume it does.
- - The next three bytes (2,3,4) are static `0x80 0x00 0x00`
- - The next two bytes (5,6) refer to how long the rest of the payload is. Byte 6 represents the number of bytes to the end of the payload including the last checksum byte.  Byte 5 is one less that this, I assume this means the length without the checksum.
- - The last byte is, I assume, a checksum.  The calculation for which is explored in the scratch notes file, and the `encoder.py` Python script (unfinished).  The validity of this checksum is seemingly ignored by the device.
+These are common to all payloads and many (if not all) Zengge devices.
+ - The first byte is used for per-command flags. 0x40 means that the command is fragmented due to length. The flag is set for every fragment. You need at least 56 to 57 LEDs (depending on the device) for this to happen. As this ring light only has 48 LEDs, commands will never need to be fragmented.
+ - After this comes the counter which increments after every command (so it's the same for all fragments of one command). It starts at 1 and can roll over. It is generally ignored but used to tell which fragments belong together.
+ - The next byte is per-fragment flags. 0x80 means that this is the last (or only) fragment.
+ - This is the fragment counter. It starts with 0 for the first or only fragment of a command.
+ - Now comes the only word (big endian) in this header. It contains to the total payload of all fragments' length, not counting the following byte and the checksum. This word is only present in the first or only fragment.
+ - The next byte represents the number of bytes to the end of the payload including the last checksum byte. For single-fragment commands, this is therefore one more than the previous word.
+ - Except for some initialisation commands, the next byte is always 0x0b. It is only present in the first or only fragment.
+ - The last byte is a checksum. It is simply the sum of all bytes after the header, not counting the checksum itself. It is generally ignored. Some commands even omit it.
+This means that the header (without the checksum) of the first fragment is 8 bytes long, but only 5 for follow-up fragments.
 
 ## Power control
 Example bytes `ON`:  `00 04 80 00 00 0d 0e 0b 3b 23 00 00 00 00 00 00 00 32 00 00 90`
