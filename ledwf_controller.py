@@ -256,6 +256,7 @@ def find_devices():
         print("No devices found")
 
 def response_decode(response):
+    print("Got a response")
     #print(f"Response: {response.hex()}")
     response_str = response.decode("utf-8", errors="ignore")
     last_quote = response_str.rfind('"')
@@ -330,15 +331,15 @@ elif len(sys.argv) > 1 and sys.argv[1] == "--connect":
             # this will do
             peripheral.connect()
             try:
-                services = peripheral.services()
-                for service in services:
-                    print(f"Service: {service.uuid()}")
-                    for characteristic in service.characteristics():
-                        print(f"\tCharacteristic: {characteristic.uuid()}")
-                        for descriptor in characteristic.descriptors():
-                            print(f"\t\tDescriptor: {descriptor.uuid()}")
+                #services = peripheral.services()
+                # for service in services:
+                #     print(f"Service: {service.uuid()}")
+                #     for characteristic in service.characteristics():
+                #         print(f"\tCharacteristic: {characteristic.uuid()}")
+                #         for descriptor in characteristic.descriptors():
+                #             print(f"\t\tDescriptor: {descriptor.uuid()}")
                 peripheral.notify(SERVICE_UUID, NOTIFY_UUID, response_decode)
-                send_initial_packet(peripheral)
+                #send_initial_packet(peripheral)
                 #send_initial_packet2(peripheral)
                 print("Turning on")
                 set_power(peripheral, True)

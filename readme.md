@@ -211,3 +211,11 @@ I will create a new project very similar to my [NimBLE Triones](https://github.c
 It'd be great if these devices could get included in [led-ble](https://github.com/Bluetooth-Devices/led-ble) to give native support to Home Assistant.  However that library depends on Bleak which uses asyncio in Python and try as I might, I can't make sense of it.  So help is welcomed on this front.
 
 If you are able to make use of this information in your own projects, please let me know and I can link to them from here.
+
+## Other projects that might be of interest
+
+- [iDotMatrix](https://github.com/8none1/idotmatrix)
+- [Zengge LEDnet WF](https://github.com/8none1/zengge_lednetwf)
+- [iDealLED](https://github.com/8none1/idealLED)
+- [BJ_LED](https://github.com/8none1/bj_led)
+- [ELK BLEDOB](https://github.com/8none1/elk-bledob)
