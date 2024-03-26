@@ -162,6 +162,29 @@ The packets are 170 bytes long for a 48 LED device.
 #                                                            00 10 80 00 00 96 97 0b 59 000000 ...[deleted]... 000000 02 64 64 00 23
 ```
 
+## LED settings
+
+You can configure the number of LEDs on your strip via the number of segments and the number of LEDs in a segment.  You can configure the type of LEDs in use and the protocol used to talk to them (e.g. colour ordering).  There are some sample Wireshark captures in the `led_settings` file in the `bt_snoop` directory.
+
+```text
+checksum? -----------------------------------------------------v
+f0 ---------------------------------------------------------v  |
+Number of segments --------------------------------------v  |  |
+Num LEDs ---------------------------------------------v  |  |  |
+Colour ordering -----------------------------------v  |  |  |  |
+LED type (0x0-0x0b) ----------------------------v  |  |  |  |  |
+Number of segments --------------------------v  |  |  |  |  |  |
+Num LEDs (16 bit number?) -------------v--v  |  |  |  |  |  |  |
+Some kind of instruction? ------v----v |  |  |  |  |  |  |  |  |
+length of packet? ---------v--v |    | |  |  |  |  |  |  |  |  |
+header -------------v----v |  | |    | |  |  |  |  |  |  |  |  |
+counter -------v--v |    | |  | |    | |  |  |  |  |  |  |  |  |
+               0022 800000 0b0c 0b6200 64 00 03 01 00 64 03 f0 21
+                                  |--------------------------|
+                                     checksum source && 0xFF
+```
+I think the checksum is the sum of these bytes & 0xff.  Bytes 9->18.
+
 ## Response data
 
 Once you have enabled notifications (which you seem to have to do in order for it to accept commands) you will receive a message on every state change.  The format of that message is 8 bytes of some kind of header, followed by a hex encoded string which resembles a JSON object.  If you convert the whole hex string to text it looks like this:
