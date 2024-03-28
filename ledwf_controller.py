@@ -269,35 +269,40 @@ def response_decode(response):
     else:
         return None
     
-    print(f"Payload: {payload}")
+    print(f"\tPayload: {payload}")
+    hex_bytes = [payload[i:i+2] for i in range(0, len(payload), 2)]
+    print(f"\tHex bytes: {hex_bytes}")
     response = bytearray.fromhex(payload)
     power = response[2]
     if power == 0x23:
-        print("Power: ON")
+        print("\t\tPower: ON")
     elif power == 0x24:
-        print("Power: OFF")
+        print("\t\tPower: OFF")
 
     mode = response[4]
 
     if mode == 0xF0:
         # RGB mode
         r,g,b = response[6], response[7], response[8]
-        print(f"RGB: {r}, {g}, {b}")
+        print(f"\tRGB: {r}, {g}, {b}")
     elif mode == 0x0F:
         # White mode
         temp, brightness = response[9], response[5]
-        print(f"White Temperature: {temp}, Brightness: {brightness}")
+        print(f"\tWhite Temperature: {temp}, Brightness: {brightness}")
     elif mode > 0x0 and mode < 0x72:
         # Symphony modes
-        print(f"Symphony Mode: {mode}")
+        print(f"\tSymphony Mode: {mode}")
         brightness = response[6]
         speed = response[7]
-        print(f"Speed: {speed}, Brightness: {brightness}")
+        print(f"\t\tSpeed: {speed}, Brightness: {brightness}")
     else:
-        print(f"Mode: {mode}")
-        print(f"Payload: {payload}")
+        print(f"\tMode: {mode}")
+        print(f"\tPayload: {payload}")
         response = bytearray.fromhex(payload)
 
+    led_count = response[12]
+    print(f"\tLED Count: {led_count}")
+    PIXEL_COUNT = led_count
 
 adapters = simplepyble.Adapter.get_adapters()
 adapter = adapters[0] # We are assuming you only have one BT adapter for now
@@ -323,12 +328,16 @@ elif len(sys.argv) > 1 and sys.argv[1] == "--connect":
     # There are no examples of how to instantiate a peripheral object from a mac address
     # it probably can be done, but I can't work it out from the source, so for now
     # just use scan to find it by name
+
     print("Scanning for devices")
     adapter.scan_for(5000)
     peripherals = adapter.scan_get_results()
+    pass
     for peripheral in peripherals:
-        if peripheral.identifier().startswith("LEDnetWF"):
+        if peripheral.identifier().startswith("LEDnetWF"): # and peripheral.address() == "08:65:F0:62:B0:5B":
             # this will do
+            print(f"Connecting to {peripheral.identifier()}")
+
             peripheral.connect()
             try:
                 #services = peripheral.services()
@@ -347,19 +356,20 @@ elif len(sys.argv) > 1 and sys.argv[1] == "--connect":
                 # Use to debug response packets
                 # while True:
                 #     time.sleep(1)
-                set_white(peripheral, 100, 50)
-                time.sleep(5)
-                set_white(peripheral, 75, 50)
-                time.sleep(5)
-                set_white(peripheral, 50, 50)
-                time.sleep(5)
+                # set_white(peripheral, 100, 50)
+                # time.sleep(5)
+                # set_white(peripheral, 75, 50)
+                # time.sleep(5)
+                # set_white(peripheral, 50, 50)
+                # time.sleep(5)
 
-                for m in range(5):
+                for m in range(2):
                     m += 1
                     print(f"Setting mode: {m}")
                     set_mode(peripheral, m, 50, 100)
                     time.sleep(5)
                 
+                print("Testing smear mode")
                 p = build_smear_packet()
                 p = test_smear_pattern(p)
                 send_prepared_packet(peripheral, p)

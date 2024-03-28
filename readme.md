@@ -132,7 +132,7 @@ This is what the app calls modes / effects.  There are a number (113 in the app)
 ```
 # Brightness 1 - 0x64 --------------------------------------------v
 # Speed 1 - 0x64 ----------------------------------------------v  |
-# effect number (1 - 0x71 ----------------------------------v  |  |
+# effect number (1 - 0x71) ---------------------------------v  |  |
 # ? --------------------------------------------------v--v  |  |  |
 # length of packets from here to the end ----------v  |  |  |  |  |
 # length of packets minus 1 --------------------v  |  |  |  |  |  |
@@ -223,7 +223,22 @@ The payload in the JSON object reflects what is currently going on with the devi
 
 Thanks to [bdraco](https://github.com/8none1/zengge_lednetwf/issues/1) for pointing me at the flux_led code which has the exact same status packets.
 
+### LED Strip settings response
 
+If you send a payload like `00 03 80 00 00 05 06 0a 63 12 21 f0 86` (changing the counter and checksum) the LED strip should send you a JSON payload which tells you about it's settings.  Settings include the number of LEDs, the LED type (WS2812b etc), the colour order (RGB, GBR, etc).  I can be decoded as:
+
+ ```text
+ checksum (sum AND 0xff) ---------------------------------------------------------||
+ num segs music mode ----------------------------------------------------------|| ||
+ num leds music mode -------------------------------------------------------|| || ||
+ colour order 0x00 - 0x05 -----------------------------------------------|| || || ||
+ chip type 0x01-0x0b -------------------------------------------------|| || || || ||
+ light bar segments -----------------------------------------------|| || || || || ||
+ 0 -------------------------------------------------------------|| || || || || || ||
+ num leds lightbar mode ----------------------------------||-|| || || || || || || ||
+ header --------------------------------------------|---| || || || || || || || || ||
+      04 79 80 00 00 2d 2e 0a  {"code":0,"payload":"00 63 00 35 00 01 0B 02 35 01 DC"}
+ ```
 
 # Tools
 
