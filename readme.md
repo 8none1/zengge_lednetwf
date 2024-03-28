@@ -225,7 +225,17 @@ Thanks to [bdraco](https://github.com/8none1/zengge_lednetwf/issues/1) for point
 
 ### LED Strip settings response
 
-If you send a payload like `00 03 80 00 00 05 06 0a 63 12 21 f0 86` (changing the counter and checksum) the LED strip should send you a JSON payload which tells you about it's settings.  Settings include the number of LEDs, the LED type (WS2812b etc), the colour order (RGB, GBR, etc).  I can be decoded as:
+There seem to be differences between firmware versions and/or device types.
+
+To request a notification containing the settings of the LED controller you can send:
+`00 35 80 00 00 04 05 0a 81 8a 8b 96`
+or
+`00 03 80 00 00 05 06 0a 63 12 21 f0 86`
+(changing the counter and checksum)
+
+The LED strip should send you a JSON payload which tells you about it's settings.  Settings include the number of LEDs, the LED type (WS2812b etc), the colour order (RGB, GBR, etc).  I can be decoded as:
+
+### LED strips
 
  ```text
  checksum (sum AND 0xff) ---------------------------------------------------------||
@@ -239,6 +249,23 @@ If you send a payload like `00 03 80 00 00 05 06 0a 63 12 21 f0 86` (changing th
  header --------------------------------------------|---| || || || || || || || || ||
       04 79 80 00 00 2d 2e 0a  {"code":0,"payload":"00 63 00 35 00 01 0B 02 35 01 DC"}
  ```
+
+#### LED ring light / circles
+
+```text
+colour order --------------------||
+led type 1 to 6 --------------|| ||
+num leds ------------------|| || ||
+header --------------|---| || || ||
+{"code":0,"payload":"63 00 1C 01 02 82"}
+{"code":0,"payload":"63 00 1C 01 02 82"}
+{"code":0,"payload":"63 00 1C 06 02 87"}
+{"code":0,"payload":"63 00 1C 01 02 82"}
+{"code":0,"payload":"63 00 1C 01 00 80"}
+{"code":0,"payload":"63 00 1C 01 05 85"}
+```
+
+TODO: Work out how to tell which device is which.
 
 # Tools
 
