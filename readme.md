@@ -250,7 +250,7 @@ The LED strip should send you a JSON payload which tells you about it's settings
       04 79 80 00 00 2d 2e 0a  {"code":0,"payload":"00 63 00 35 00 01 0B 02 35 01 DC"}
  ```
 
-#### LED ring light / circles
+#### LED ring light / circle
 
 ```text
 colour order --------------------||
@@ -266,6 +266,39 @@ header --------------|---| || || ||
 ```
 
 TODO: Work out how to tell which device is which.
+
+## Advertising Data
+
+It turns out that these devices provide some information via the advertising data before they are connected.  I'm still trying to decode all of this information but it's likely this is how to tell one device type from another.
+
+### Ring
+
+```text
+Off:              btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 24 61 0f 1d 32 51 00 32 02 00 1c 00 00
+On White:         btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 23 61 0f 64 32 51 00 32 02 00 1c 00 00
+On Red ?          btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 23 61 f0 00 ff 00 00 00 02 00 1c 00 00
+On Green:         btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 23 61 f0 00 00 ff 00 00 02 00 1c 00 00
+On Blue:          btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 23 61 f0 00 00 00 ff 00 02 00 1c 00 00
+Some effect mode: btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 23 25 1d 00 32 51 ff 00 02 00 1c 00 00
+Same but off:     btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 24 25 20 00 32 51 ff 00 02 00 1c 00 00
+```
+### Strip
+
+```text
+Music Mode:       btle.scan_responce_data == 1e ff 00 5a 56 05 08 65 f0 62 b0 5b 00 a3 2d 03 01 02 23 62 01 64 ff 00 00 00 03 00 36 00 00
+Off:              btle.scan_responce_data == 1e ff 00 5a 56 05 08 65 f0 62 b0 5b 00 a3 2d 03 01 02 24 62 01 64 ff 00 00 00 03 00 36 00 00
+Fixed Red:        btle.scan_responce_data == 1e ff 00 5a 56 05 08 65 f0 62 b0 5b 00 a3 2d 03 01 02 23 61 01 32 ff 00 00 00 03 00 36 00 00
+Fixed Green:      btle.scan_responce_data == 1e ff 00 5a 56 05 08 65 f0 62 b0 5b 00 a3 2d 03 01 02 23 61 01 32 00 ff 00 00 03 00 36 00 00
+Fixed Blue:       btle.scan_responce_data == 1e ff 00 5a 56 05 08 65 f0 62 b0 5b 00 a3 2d 03 01 02 23 61 01 32 00 00 ff 00 03 00 36 00 00
+Firmware version or similar -----------------------------||    |~~~~~~~~~~~~~~~| |~~~~~~~~~~~~|    || || |~~~| |~~~~~~|          ||
+Firmware subversion or similar --------------------------------+---------------+-|            |    || || |   | |      |          ||
+MAC address  --------------------------------------------------|               |                   || || |   | |      |          ||
+On/Off  -------------------------------------------------------------------------------------------|| || |   | |      |          || 
+Mode? ------------------------------------------------------------------------------------------------|| |   | |      |          ||
+Probably white colour temp ------------------------------------------------------------------------------|   | |      |          ||
+RGB -----------------------------------------------------------------------------------------------------------|      |          ||
+LED count -------------------------------------------------------------------------------------------------------------------------
+```
 
 # Tools
 
