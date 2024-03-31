@@ -174,21 +174,21 @@ The packets are 170 bytes long for a 48 LED device.
 You can configure the number of LEDs on your strip via the number of segments and the number of LEDs in a segment.  You can configure the type of LEDs in use and the protocol used to talk to them (e.g. colour ordering).  There are some sample Wireshark captures in the `led_settings` file in the `bt_snoop` directory.
 
 ```text
-checksum? -----------------------------------------------------v
-f0 ---------------------------------------------------------v  |
-Number of segments --------------------------------------v  |  |
-Num LEDs ---------------------------------------------v  |  |  |
-Colour ordering -----------------------------------v  |  |  |  |
-LED type (0x0-0x0b) ----------------------------v  |  |  |  |  |
-Number of segments --------------------------v  |  |  |  |  |  |
-Num LEDs (16 bit number?) -------------v--v  |  |  |  |  |  |  |
-Some kind of instruction? ------v----v |  |  |  |  |  |  |  |  |
-length of packet? ---------v--v |    | |  |  |  |  |  |  |  |  |
-header -------------v----v |  | |    | |  |  |  |  |  |  |  |  |
-counter -------v--v |    | |  | |    | |  |  |  |  |  |  |  |  |
-               0022 800000 0b0c 0b6200 64 00 03 01 00 64 03 f0 21
-                                  |--------------------------|
-                                     checksum source && 0xFF
+checksum? ------------------------------------------------------v
+f0 ----------------------------------------------------------v  |
+Number of segments ---------------------------------------v  |  |
+Num LEDs ----------------------------------------------v  |  |  |
+Colour ordering ------------------------------------v  |  |  |  |
+LED type (0x0-0x0b) -----------------------------v  |  |  |  |  |
+Number of segments ------------------------v--v  |  |  |  |  |  |
+Num LEDs (16 bit number?) -----------v--v  |  |  |  |  |  |  |  |
+LED settings instruction? --------v  |  |  |  |  |  |  |  |  |  |
+length of packet? ---------v---V  |  |  |  |  |  |  |  |  |  |  |
+header -------------v----v |   |  |  |  |  |  |  |  |  |  |  |  |
+counter -------v--v |    | |   |  |  |  |  |  |  |  |  |  |  |  |
+               0022 800000 0b0c0b 62 00 64 00 03 01 00 64 03 f0 21
+                                   |---------------------------|
+                                   |  checksum source && 0xFF  |
 ```
 I think the checksum is the sum of these bytes & 0xff.  Bytes 9->18.
 
