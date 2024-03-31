@@ -28,25 +28,31 @@ I'm going to try and reverse engineer the BLE protocol and see if I can make it 
 
 ![image](https://user-images.githubusercontent.com/6552931/198889989-ac594279-b3c5-47e6-ad61-4ea750f723b1.png)
 
-
 If you're interested in helping out, please get in touch.  If you know of someone who has already worked this out let me know.
 
 # Latest news
+
+## 2024-03-31
+
+I got a new version of this controller which has a later firmware version.  There are some small changes in the protocol between these versions, and I'm working them out.  This also requires support for changing the LED colour ordering, chip type, number of LEDs etc.  This has been worked out and decoded below.
+
+Also I have spent some time looking at the advertising packets which they send.  This contains information about the power state, current colour etc without any kind of pairing required.  The data is just broadcast.  I'm working on integrating this in to the Home Assistant integration as well.
+
+In summary, this is still an active project and contributions are welcome both here to document the protocol and on the Home Assistant integration listed above.
+
 ## 2022-11-06
+
 Most of the features are now supported.  With the decoded protocols you can:
- - Set single static colours
- - Select from any of the built in modes and alter the speed and brightness
- - Create your own pixel by pixel patterns, called "smear" in the app.
+- Set single static colours
+- Select from any of the built in modes and alter the speed and brightness
+- Create your own pixel by pixel patterns, called "smear" in the app.
 
 Here's a demo of stepping through those features:
 
-
 https://user-images.githubusercontent.com/6552931/200186465-590ff263-4d1e-49c9-acda-37d8344e04e2.mp4
 
-
-
 There are still some things that need doing:
- - How does it describe the number of LEDs it has? (I have some theories already about this, just need to test them).  Theory tested, it was wrong.  I think they need you to tell them.
+- How does it describe the number of LEDs it has? (I have some theories already about this, just need to test them).  Theory tested, it was wrong.  I think they need you to tell them.
 
 ## 2022-11-05
 I can command this thing from Python!
