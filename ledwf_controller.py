@@ -16,6 +16,7 @@ WRITE_UUID   = "0000ff01-0000-1000-8000-00805f9b34fb"
 COUNTER      = 0
 PIXEL_COUNT  = 48 # TODO: where does this come from?  We must be able to read it from the device
 
+MODEL_NUMBER = None
 
 # The control "packets" vary in size and content depending on the command.  The first two bytes
 # seem to be a counter that increments with each packet.  The last two bytes are a checksum.
@@ -31,6 +32,7 @@ PIXEL_COUNT  = 48 # TODO: where does this come from?  We must be able to read it
 # standard header --------------------------------v--v--v  |  |  |
 # counter ----------------------------------v--v  |  |  |  |  |  |
 INITIAL_PACKET         = bytearray.fromhex("00 01 80 00 00 04 05 0a 81 8a 8b 96")
+GET_STRIP_SETTINGS     = bytearray.fromhex("00 02 80 00 00 05 06 0a 63 12 21 f0 86")
 INITIAL_PACKET_2       = bytearray.fromhex("00 02 80 00 00 0c 0d 0b 10 14 16 0b 05 0d 36 36 06 00 0f d8")
 UNKNOWN_STATE_CHANGE   = bytearray.fromhex("00 45 80 00 00 05 06 0a 22 2a 2b 0f 86")
 UNKNOWN_STATE_CHANGE_2 = bytearray.fromhex("00 46 80 00 00 05 06 0a 11 1a 1b 0f 55")
@@ -127,6 +129,13 @@ def send_initial_packet(peripheral):
     # This doesnt seem to make any difference, but it does generate a notification
     # which we might be able to use to find the current status
     initial_packet = INITIAL_PACKET
+    initial_packet = prepare_packet(initial_packet)
+    peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(initial_packet))
+
+def send_get_strip_settings_packet(peripheral):
+    # This doesnt seem to make any difference, but it does generate a notification
+    # which we might be able to use to find the current status
+    initial_packet = GET_STRIP_SETTINGS
     initial_packet = prepare_packet(initial_packet)
     peripheral.write_request(SERVICE_UUID, WRITE_UUID, bytes(initial_packet))
 
@@ -256,8 +265,9 @@ def find_devices():
         print("No devices found")
 
 def response_decode(response):
+    global MODEL_NUMBER
     print("Got a response")
-    #print(f"Response: {response.hex()}")
+    print(f"Response: {response.hex()}")
     response_str = response.decode("utf-8", errors="ignore")
     last_quote = response_str.rfind('"')
     if last_quote > 0:
@@ -273,6 +283,25 @@ def response_decode(response):
     hex_bytes = [payload[i:i+2] for i in range(0, len(payload), 2)]
     print(f"\tHex bytes: {hex_bytes}")
     response = bytearray.fromhex(payload)
+
+    if response[0] == 0x81:
+        # Suggests that is a response to the initial packet
+        MODEL_NUMBER = response[1]
+        print(f"\tModel Number: {MODEL_NUMBER}")
+
+    if   MODEL_NUMBER == 0xA3:
+        # Strip
+        if response[0] == 0x00 and response[1] == 0x63 and len(response) == 11:
+            print("\t\tStrip Device")
+            print("\t\tResponse to a settings request")
+            return
+    elif MODEL_NUMBER == 0x1D:
+        # Ring Device
+        if response[0] == 0x63 and len(response) == 6:
+            print("\t\tRing Device")
+            print("\t\tResponse to a settings request")
+            return
+
     power = response[2]
     if power == 0x23:
         print("\t\tPower: ON")
@@ -334,7 +363,9 @@ elif len(sys.argv) > 1 and sys.argv[1] == "--connect":
     peripherals = adapter.scan_get_results()
     pass
     for peripheral in peripherals:
-        if peripheral.identifier().startswith("LEDnetWF"): # and peripheral.address() == "08:65:F0:62:B0:5B":
+        ring  = "08:65:F0:0C:DA:81"
+        strip = "08:65:F0:62:B0:5B"
+        if peripheral.identifier().startswith("LEDnetWF") and peripheral.address() == ring:
             # this will do
             print(f"Connecting to {peripheral.identifier()}")
 
@@ -348,32 +379,38 @@ elif len(sys.argv) > 1 and sys.argv[1] == "--connect":
                 #         for descriptor in characteristic.descriptors():
                 #             print(f"\t\tDescriptor: {descriptor.uuid()}")
                 peripheral.notify(SERVICE_UUID, NOTIFY_UUID, response_decode)
-                #send_initial_packet(peripheral)
-                #send_initial_packet2(peripheral)
-                print("Turning on")
-                set_power(peripheral, True)
-                time.sleep(2)
-                # Use to debug response packets
-                # while True:
-                #     time.sleep(1)
-                # set_white(peripheral, 100, 50)
-                # time.sleep(5)
-                # set_white(peripheral, 75, 50)
-                # time.sleep(5)
-                # set_white(peripheral, 50, 50)
-                # time.sleep(5)
+                print("Sending initial packet... and waiting 5 seconds")
+                send_initial_packet(peripheral)
+                time.sleep(5)
+                print("Sending get strip settings packet... and waiting 5 seconds")
+                send_get_strip_settings_packet(peripheral)
+                time.sleep(5)
 
-                for m in range(2):
-                    m += 1
-                    print(f"Setting mode: {m}")
-                    set_mode(peripheral, m, 50, 100)
-                    time.sleep(5)
+                # #send_initial_packet2(peripheral)
+                # print("Turning on")
+                # set_power(peripheral, True)
+                # time.sleep(2)
+                # # Use to debug response packets
+                # # while True:
+                # #     time.sleep(1)
+                # # set_white(peripheral, 100, 50)
+                # # time.sleep(5)
+                # # set_white(peripheral, 75, 50)
+                # # time.sleep(5)
+                # # set_white(peripheral, 50, 50)
+                # # time.sleep(5)
+
+                # for m in range(2):
+                #     m += 1
+                #     print(f"Setting mode: {m}")
+                #     set_mode(peripheral, m, 50, 100)
+                #     time.sleep(5)
                 
-                print("Testing smear mode")
-                p = build_smear_packet()
-                p = test_smear_pattern(p)
-                send_prepared_packet(peripheral, p)
-                time.sleep(10)
+                # print("Testing smear mode")
+                # p = build_smear_packet()
+                # p = test_smear_pattern(p)
+                # send_prepared_packet(peripheral, p)
+                # time.sleep(10)
 
                 print("Turning off")
                 set_power(peripheral, False)

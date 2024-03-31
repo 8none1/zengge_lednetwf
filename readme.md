@@ -1,8 +1,3 @@
-# Update 2023-07-03
-
-Check out raulgbcr's project to add support for these lights to Home Assistant:  https://github.com/raulgbcr/lednetwf_ble
-
-
 # Zengge LEDnet WF Bluetooth LE reverse engineering
 
 Might also be known as:
@@ -13,8 +8,14 @@ Might also be known as:
 
 There are other ZENGGE devices with similar names. For example, there are small black USB Bluetooth LED controllers bundled with light strips, which can be used with any WS2812B lights with 3-pin connector. They show up as "LEDnetWF0200A3" plus the last six digits of their MAC. While the app uses different commands than those below, they will still accept some of them (namely on/off, HSL colors and symphony, but with only 100 effects).
 
+## Home Assistant Integration
+
+Check out @raulgbcr project to add support for these lights to Home Assistant:  https://github.com/raulgbcr/lednetwf_ble
+
+We've got a pretty decent integration going, and it's getting updated fairly regularly.  Contributions very welcome.
 
 ## Background
+
 I bought one of these neat looking RGB WW ring lamp things off [Ali Express](https://www.aliexpress.com/item/1005004712536400.html?spm=a2g0o.order_list.0.0.21ef1802Yiov0S):
 
 ![image](https://user-images.githubusercontent.com/6552931/198835721-98a37067-6197-4116-9572-551e1f78e7a5.png)
@@ -207,7 +208,8 @@ The payload in the JSON object reflects what is currently going on with the devi
 # guess mode ------------------------------------------v  |  |  |  |  |  |  |  |  |
 # unknown ------------------------------------------v  |  |  |  |  |  |  |  |  |  |
 # off = 24, on = 23 -----------------------------v  |  |  |  |  |  |  |  |  |  |  |
-# fixed -----------------------------------v--v  |  |  |  |  |  |  |  |  |  |  |  |
+# Device type / firmware minor version -------v  |  |  |  |  |  |  |  |  |  |  |  |
+# fixed -----------------------------------v  |  |  |  |  |  |  |  |  |  |  |  |  |
 #                                          81 1D 24 24 02 00 64 32 FF 00 02 00 30 AF
 #                                          81 1D 23 61 0F 31 64 32 FF 64 02 00 30 8D
 #                                          81 1D 23 61 0F 31 64 32 FF 00 02 00 30 29
@@ -229,9 +231,6 @@ There seem to be differences between firmware versions and/or device types.
 
 To request a notification containing the settings of the LED controller you can send:
 `00 35 80 00 00 04 05 0a 81 8a 8b 96`
-or
-`00 03 80 00 00 05 06 0a 63 12 21 f0 86`
-(changing the counter and checksum)
 
 The LED strip should send you a JSON payload which tells you about it's settings.  Settings include the number of LEDs, the LED type (WS2812b etc), the colour order (RGB, GBR, etc).  I can be decoded as:
 
@@ -251,6 +250,8 @@ The LED strip should send you a JSON payload which tells you about it's settings
  ```
 
 #### LED ring light / circle
+
+Hm, ignore this bit for now.  I made a mistake somewhere...
 
 ```text
 colour order --------------------||
@@ -285,6 +286,7 @@ Same but off:     btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81
 ### Strip
 
 ```text
+                                                         0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
 Music Mode:       btle.scan_responce_data == 1e ff 00 5a 56 05 08 65 f0 62 b0 5b 00 a3 2d 03 01 02 23 62 01 64 ff 00 00 00 03 00 36 00 00
 Off:              btle.scan_responce_data == 1e ff 00 5a 56 05 08 65 f0 62 b0 5b 00 a3 2d 03 01 02 24 62 01 64 ff 00 00 00 03 00 36 00 00
 Fixed Red:        btle.scan_responce_data == 1e ff 00 5a 56 05 08 65 f0 62 b0 5b 00 a3 2d 03 01 02 23 61 01 32 ff 00 00 00 03 00 36 00 00
