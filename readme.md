@@ -173,22 +173,43 @@ The packets are 170 bytes long for a 48 LED device.
 
 You can configure the number of LEDs on your strip via the number of segments and the number of LEDs in a segment.  You can configure the type of LEDs in use and the protocol used to talk to them (e.g. colour ordering).  There are some sample Wireshark captures in the `led_settings` file in the `bt_snoop` directory.
 
+### Firmware version 0x53
+
 ```text
-checksum? ------------------------------------------------------v
-f0 ----------------------------------------------------------v  |
-Number of segments ---------------------------------------v  |  |
-Num LEDs ----------------------------------------------v  |  |  |
-Colour ordering ------------------------------------v  |  |  |  |
-LED type (0x0-0x0b) -----------------------------v  |  |  |  |  |
-Number of segments ------------------------v--v  |  |  |  |  |  |
-Num LEDs (16 bit number?) -----------v--v  |  |  |  |  |  |  |  |
-LED settings instruction? --------v  |  |  |  |  |  |  |  |  |  |
-length of packet? ---------v---V  |  |  |  |  |  |  |  |  |  |  |
-header -------------v----v |   |  |  |  |  |  |  |  |  |  |  |  |
-counter -------v--v |    | |   |  |  |  |  |  |  |  |  |  |  |  |
-               0022 800000 0b0c0b 62 00 64 00 03 01 00 64 03 f0 21
-                                   |---------------------------|
-                                   |  checksum source && 0xFF  |
+
+Checksum? ------------------------------------------v
+Colour ordering (0x00 to 0x05) ------------------v  |
+LED type (0x01 to 0x06) ----------------------v  |  |
+Number of LEDs ----------------------------v  |  |  |
+00 -------------------------------------v  |  |  |  |
+62 ----------------------------------v  |  |  |  |  |
+0a -------------------------------v  |  |  |  |  |  |
+length of packet without c.sum v  |  |  |  |  |  |  |
+length of packet with c.sum v  |  |  |  |  |  |  |  |
+header --------------v----v |  |  |  |  |  |  |  |  |
+counter --------v--v |    | |  |  |  |  |  |  |  |  |
+                0004 800000 06 07 0a 62 00 0e 01 00 71
+                0 1  2 3 4  5  6  7  8  9  10 11 12 13
+```
+
+### Firmware version 0x56
+
+```text
+checksum? -----------------------------------------------------v
+f0 ---------------------------------------------------------v  |
+Number of segments --------------------------------------v  |  |
+Num LEDs ---------------------------------------------v  |  |  |
+Colour ordering -----------------------------------v  |  |  |  |
+LED type (0x0-0x0b) ----------------------------v  |  |  |  |  |
+Number of segments --------------------------v  |  |  |  |  |  |
+Num LEDs (16 bit number?) -------------v--v  |  |  |  |  |  |  |
+Some kind of instruction? ------v----v |  |  |  |  |  |  |  |  |
+length of packet? ---------v--v |    | |  |  |  |  |  |  |  |  |
+header -------------v----v |  | |    | |  |  |  |  |  |  |  |  |
+counter -------v--v |    | |  | |    | |  |  |  |  |  |  |  |  |
+               0022 800000 0b0c 0b6200 64 00 03 01 00 64 03 f0 21
+                                  |--------------------------|
+                                     checksum source && 0xFF
 ```
 I think the checksum is the sum of these bytes & 0xff.  Bytes 9->18.
 
@@ -253,15 +274,14 @@ The LED strip should send you a JSON payload which tells you about it's settings
  num leds lightbar mode ----------------------------------||-|| || || || || || || ||
  header --------------------------------------------|---| || || || || || || || || ||
       04 79 80 00 00 2d 2e 0a  {"code":0,"payload":"00 63 00 35 00 01 0B 02 35 01 DC"}
+                                                    0  1  2  3  4  5  6  7  8  9  10
  ```
 
 #### LED ring light / circle
 
-Hm, ignore this bit for now.  I made a mistake somewhere...
-
 ```text
 colour order --------------------||
-led type 1 to 6 --------------|| ||
+chip type 1 to 6--------------|| ||
 num leds ------------------|| || ||
 header --------------|---| || || ||
 {"code":0,"payload":"63 00 1C 01 02 82"}
@@ -271,8 +291,6 @@ header --------------|---| || || ||
 {"code":0,"payload":"63 00 1C 01 00 80"}
 {"code":0,"payload":"63 00 1C 01 05 85"}
 ```
-
-TODO: Work out how to tell which device is which.
 
 ## Advertising Data
 
