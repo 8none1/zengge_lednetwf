@@ -16,10 +16,9 @@ We've got a pretty decent integration going, and it's getting updated fairly reg
 
 ## Background
 
-I bought one of these neat looking RGB WW ring lamp things off [Ali Express](https://www.aliexpress.com/item/1005004712536400.html?spm=a2g0o.order_list.0.0.21ef1802Yiov0S):
+I bought one of these neat looking RGB WW ring lamp things off [Ali Express](https://s.click.aliexpress.com/e/_DemSYhb):
 
 ![image](https://user-images.githubusercontent.com/6552931/198835721-98a37067-6197-4116-9572-551e1f78e7a5.png)
-
 
 It has a Bluetooth LE controller and I want to be able to control it myself from code, not from within the app.  It also has an mini remote control which seems to be RF not IR, despite looking like an IR.
 The app is called "Zengge" but also seems to be branded Magic Hue in a few places.
@@ -115,6 +114,9 @@ Example bytes `OFF`: `00 5b 80 00 00 0d 0e 0b 3b 24 00 00 00 00 00 00 00 32 00 0
 ```
 
 ## RGB colour handling
+
+### Ring Light / Firmware 0x53
+
 The device expects basic static colour information in HSV format.  The value for the Hue element is divided by two to fit in to a single byte.  Saturation and Value are percentages from 0 to 100 (0x64).
 White colours are represented by colour temperature percentage from 0x0 to 0x64 from warm to cool.  Warm (0x0) is only the warm white LED, cool (0x64) is only the white LED and then a mixture between the two.  Brightness is a percentage.
 
@@ -133,8 +135,33 @@ I assume that HSV colours and white colours are mutually exclusive, but I haven'
                                             00 10 80 00 00 0d 0e 0b 3b b1 00 00 00 1b 36 00 00 00 00 00 3d   # bytes 13 & 14 
 ```
 
-## Symphony
-This is what the app calls modes / effects.  There are a number (113 in the app) of effects.  They are be numbered serially from 0x01 to 0x71.  These packets do not have a checksum it seems, and they use a different format to the RGB and white colour setting payloads.  Nevertheless they are fairly easy to understand. They take the form of:
+### Strip Lights / Firmware 0x56
+
+These lights have some "static" effects which are configured through these packets as well.  They are not static though, they move!  Mode `2` is actually static.
+
+```text
+checksum ------------------------------------------------------------------------------------v
+00 00 f0 ---------------------------------------------------------------------------v------v |
+speed ---------------------------------------------------------------------------v  |      | |
+background colour ------------------------------------------------------v------v |  |      | |
+R,G,B ---------------------------------------------------------v------v |      | |  |      | |
+Fixed mode 1 -> 7 ------------------------------------------v  |      | |      | |  |      | |
+41 ------------------------------------------------------v  |  |      | |      | |  |      | |
+0b ---------------------------------------------------v  |  |  |      | |      | |  |      | |
+length ------------------------------------------v--v |  |  |  |      | |      | |  |      | |
+header -----------------------------------v----v |  | |  |  |  |      | |      | |  |      | |
+counter -----------------------------v--v |    | |  | || || || |      | || || || || || || || ||
+                                     0005 800000 0d0e 0b 41 02 ff 00 00 00 00 00 32 00 00 f0 64
+                                     0 1  2 3 4  5 6  7  8  9  10 11 12 13 14 15 16 17 18 19 20
+```
+
+## Symphony / Rmb
+
+This is what the app calls modes / effects.
+
+### Ring Light / Firmware 0x53
+
+There are a number (113 in the app) of effects.  They are be numbered serially from 0x01 to 0x71.  These packets do not have a checksum it seems, and they use a different format to the RGB and white colour setting payloads.  Nevertheless they are fairly easy to understand. They take the form of:
 
 ```
 # Brightness 1 - 0x64 --------------------------------------------v
@@ -148,7 +175,29 @@ This is what the app calls modes / effects.  There are a number (113 in the app)
                                  00 06 80 00 00 04 05 0b 38 01 01 64
 ```
 
+### Strip Light / Firmware 0x56
+
+There are 100 dynamic effects on this firmware, numbered from 0x01 to 0x64.  These packets do have a checksum, a sum of bytes 8 to 11 AND with 0xFF.
+
+```text
+checksum -----------------------------------------v
+brightness ------------------------------------v  |
+speed --------------------------------------v  |  |
+effect number  --------------------------v  |  |  |
+42 -----------------------------------v  |  |  |  |
+length 0b ------------------- v-----v |  |  |  |  |
+header ----------------v    v |     | |  |  |  |  |
+counter  ---------v--v |    | |-----| |  |  |  |  |
+                  0 1  2 3 4  5 6  7  8  9  10 11 12
+                  009c 800000 0506 0b 42 01 32 64 d9
+                  009d 800000 0506 0b 42 02 32 64 da
+                  009e 800000 0506 0b 42 03 32 64 db
+```
+
 ## Smear
+
+### Firmware 0x53
+
 This is what the apps calls custom patterns and effects.
 It allows you to draw your own patterns on the device.  My device has 48 LEDs and so the message has 48 RRGGBB entries.  There are also some modes.  
 The packets are 170 bytes long for a 48 LED device.
@@ -167,6 +216,32 @@ The packets are 170 bytes long for a 48 LED device.
 # counter ---------------------------------------------------v--v  |  |  |  |  |  |   | |                           | |  |  |  |  |
 #                                                            |  |  |  |  |  |  |  |   | |                           | |  |  |  |  |
 #                                                            00 10 80 00 00 96 97 0b 59 000000 ...[deleted]... 000000 02 64 64 00 23
+```
+
+### Firmware 0x56
+
+TDB.  It's easy enough to work out, I just haven't needed to do it yet.
+
+## Music Mode
+
+### Firmware 0x56
+
+Pending a proper update, the raw data is:
+
+```text
+brightness ----------------------------------------vv
+Sensitivity ------------------------------------v  |
+RGB RGB ----------------------|---------------| |  |
+type 01 to  0x10 ----------vv |               | |  |
+26 ---------------------v  |  |               | |  |
+on/off --------------vv |  || |               | |  | 
+                     || |  || |               | |  |
+## Enable music light bar mode                | |  |
+0022 800000 0d0e0b73 00 26 01 ff 00 00 ff 00 00 20 1a d2
+0024 800000 0d0e0b73 00 26 01 ff 00 00 ff 00 00 20 64 1c
+0025 800000 0d0e0b73 00 26 01 ff 00 00 ff 00 00 20 09 c1
+0026 800000 0d0e0b73 00 26 01 ff 00 00 ff 00 00 20 64 1c
+0028 800000 0d0e0b73 00 26 01 ff 00 00 ff 00 00 64 64 60
 ```
 
 ## LED settings
@@ -296,7 +371,7 @@ header --------------|---| || || ||
 
 It turns out that these devices provide some information via the advertising data before they are connected.  I'm still trying to decode all of this information but it's likely this is how to tell one device type from another.
 
-### Ring
+### Firmware 0x53
 
 ```text
 Off:              btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 24 61 0f 1d 32 51 00 32 02 00 1c 00 00
@@ -307,7 +382,8 @@ On Blue:          btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81
 Some effect mode: btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 23 25 1d 00 32 51 ff 00 02 00 1c 00 00
 Same but off:     btle.scan_responce_data == 1e ff 02 5a 53 05 08 65 f0 0c da 81 00 1d 0f 02 01 01 24 25 20 00 32 51 ff 00 02 00 1c 00 00
 ```
-### Strip
+
+### Firmware 0x56
 
 ```text
                                                          0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
