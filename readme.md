@@ -1,3 +1,7 @@
+# Important news
+
+This repo is now retired.  All new reverse engineering and support work is being done in the Home Assistant integration which you can find here: https://github.com/8none1/lednetwf_ble
+
 # Zengge LEDnet WF Bluetooth LE reverse engineering
 
 Might also be known as:
@@ -10,9 +14,8 @@ There are other ZENGGE devices with similar names. For example, there are small 
 
 ## Home Assistant Integration
 
-Check out @raulgbcr project to add support for these lights to Home Assistant:  https://github.com/raulgbcr/lednetwf_ble
-
 We've got a pretty decent integration going, and it's getting updated fairly regularly.  Contributions very welcome.
+https://github.com/8none1/lednetwf_ble
 
 ## Background
 
